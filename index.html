@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cuadre</title>
+<meta name="description" content="Las cuentas de la casa, cuadradas. Anota como en el chat y sabe cuánto les queda.">
+<meta name="theme-color" content="#14201A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cuadre">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Manrope:wght@400..800&display=swap">
+<style>
+:root{
+  --bg:#EEF2EC; --surface:#FFFFFF; --surface-2:#E2E8DF; --line:#D1D9CD;
+  --ink:#14201A; --muted:#56655C; --on-ink:#F1F6EF; --on-ink-muted:#A3B3A9;
+  --in:#1A8150; --neg:#BB3A26; --warn-on-ink:#FF9175; --loan:#6A44B3; --gold:#E0A21B;
+  --scrim:rgba(10,16,12,.45);
+  --shadow:0 14px 34px -18px rgba(10,16,12,.45);
+  --shadow-up:0 -12px 28px -20px rgba(10,16,12,.35);
+  --font-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --font-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1310; --surface:#161D19; --surface-2:#202923; --line:#2A352E;
+    --ink:#E5EDE6; --muted:#98A79E; --on-ink:#101612; --on-ink-muted:#56665C;
+    --in:#4CC48B; --neg:#F07D64; --warn-on-ink:#B0321B; --loan:#B79FF3; --gold:#F0B44A;
+    --scrim:rgba(0,0,0,.62);
+    --shadow:0 14px 34px -18px rgba(0,0,0,.9);
+    --shadow-up:0 -12px 28px -20px rgba(0,0,0,.9);
+    color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+[hidden]{display:none!important}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.brand-mark{width:32px;height:32px;flex:none}
+h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:38px;letter-spacing:-.045em;line-height:1;margin:0}
+
+/* ---------- screens: login / onboarding ---------- */
+.screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px;text-align:center}
+.screen .logo{display:flex;align-items:center;gap:14px;font-family:var(--font-display);font-weight:800;font-size:64px;letter-spacing:-.05em;line-height:.9}
+.screen .logo .brand-mark{width:60px;height:60px}
+.tagline{margin:0;font-size:20px;font-weight:700;color:var(--muted);max-width:420px;text-wrap:balance}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;width:100%;max-width:440px;text-align:left;display:grid;gap:14px;box-shadow:var(--shadow)}
+.card h2{font-family:var(--font-display);font-size:22px;font-weight:800;margin:0;letter-spacing:-.015em}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.btn-google{height:52px;border-radius:26px;background:var(--ink);color:var(--on-ink);font-weight:800;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:12px;width:100%;max-width:360px}
+.btn-google svg{width:22px;height:22px;background:#fff;border-radius:50%;padding:3px}
+.fine{font-size:12.5px;color:var(--muted);max-width:360px;margin:0}
+.fine a{color:var(--muted)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.person-input{display:flex;gap:8px;align-items:center}
+.person-input input{flex:1}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;width:100%;max-width:440px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--ink);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- app frame ---------- */
+.app{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px calc(var(--composer-h,150px) + 28px);display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+.side{display:grid;gap:24px;min-width:0;align-content:start}
+.ledger{min-width:0}
+@media (min-width:880px){
+  .app{grid-template-columns:minmax(0,370px) minmax(0,1fr);column-gap:40px;align-items:start}
+  .top,.banner{grid-column:1/-1}
+}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.family{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 0 0;color:var(--muted);font-size:13px;font-weight:700}
+.family span{display:inline-flex;align-items:center;gap:6px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.btn{height:40px;padding:0 15px;border-radius:20px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;text-decoration:none}
+.btn.ghost{border:1px solid var(--line);background:var(--surface)}
+.btn.primary{background:var(--ink);color:var(--on-ink)}
+.btn.danger{color:var(--neg);border:1px solid var(--line);background:var(--surface)}
+.btn.danger.armed{background:var(--neg);color:var(--surface);border-color:var(--neg)}
+.btn.wide{width:100%;height:48px;border-radius:24px;font-size:15px}
+.btn:disabled{opacity:.45;cursor:default}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:inline-grid;place-items:center;border:1px solid var(--line);background:var(--surface);flex:none}
+.link-btn{font-size:12.5px;font-weight:700;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.banner{background:var(--gold);color:#14201A;border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-weight:700;font-size:14px}
+.banner .btn{background:#14201A;color:#F1F6EF;height:36px}
+
+/* ---------- month + balance ---------- */
+.month{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
+.month-mid{text-align:center;display:grid;justify-items:center;gap:2px}
+.month h2{font-family:var(--font-display);font-weight:700;font-size:21px;margin:0;letter-spacing:-.01em}
+.month h2::first-letter{text-transform:uppercase}
+.balance{background:var(--ink);color:var(--on-ink);border-radius:22px;padding:22px 20px 18px;display:grid;gap:12px;box-shadow:var(--shadow)}
+.eyebrow{margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--on-ink-muted)}
+.big{margin:0;font-family:var(--font-display);font-weight:800;font-size:clamp(36px,11vw,58px);line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.big.neg{color:var(--warn-on-ink)}
+.meter{height:8px;border-radius:4px;background:color-mix(in srgb,var(--on-ink) 18%,transparent);overflow:hidden}
+.meter span{display:block;height:100%;width:0;background:var(--on-ink);border-radius:4px;transition:width .45s ease}
+.meter.hot span{background:var(--warn-on-ink)}
+.meter-note{margin:0;font-size:13px;color:var(--on-ink-muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:2px 0 0;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--on-ink) 16%,transparent)}
+.stats dt{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--on-ink-muted)}
+.stats dd{margin:3px 0 0;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.perday{margin:0;font-size:13.5px;line-height:1.45}
+.perday strong{font-weight:800}
+.loanline{margin:0;font-size:13px;color:var(--on-ink-muted)}
+
+/* ---------- breakdowns ---------- */
+.block h3,.ledger h3{font-family:var(--font-display);font-size:17px;font-weight:700;margin:0 0 8px;letter-spacing:-.005em}
+.block-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.block-head h3{margin:0}
+.block-total{font-family:var(--font-display);font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;color:var(--loan)}
+.rows{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.row-btn{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:7px;padding:10px;border-radius:12px;text-align:left}
+.row-btn.no-dot{grid-template-columns:minmax(0,1fr) auto}
+.row-btn:hover{background:var(--surface-2)}
+.row-btn[aria-pressed="true"]{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.row-name{font-weight:700;min-width:0}
+.tag{font-weight:600;color:var(--muted);font-size:12.5px}
+.row-sub{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.row-amt{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{grid-column:2/-1;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.row-btn.no-dot .bar{grid-column:1/-1}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--muted)}
+.muted-empty{color:var(--muted);font-size:14px;margin:0;padding:4px 10px}
+.loan-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px}
+.loan-amt{color:var(--loan)}
+.btn.small{height:36px;padding:0 12px;font-size:13px;border-radius:18px}
+
+/* ---------- ledger ---------- */
+.ledger-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;min-height:32px;flex-wrap:wrap}
+.ledger-head h3{margin:0}
+.ledger-hint{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 14px;border-radius:18px;background:var(--ink);color:var(--on-ink);font-size:13px;font-weight:700}
+.search{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--surface);margin-bottom:12px}
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;font-size:15px}
+.day{margin-bottom:16px}
+.day-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px 7px}
+.day-name{font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.day-tot{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.day-list{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.mov{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;text-align:left;border-top:1px solid var(--line)}
+.mov:first-child{border-top:0}
+.mov:hover{background:var(--surface-2)}
+.mov .dot{width:11px;height:11px}
+.mov-main{min-width:0}
+.mov-title{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mov-meta{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:1px;flex-wrap:wrap}
+.mov-amt{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mov-amt.in{color:var(--in)}
+.mov-amt.loan{color:var(--loan)}
+.pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;padding:1px 7px;border-radius:9px;background:var(--surface-2);color:var(--muted)}
+.pill.ok{background:color-mix(in srgb,var(--in) 15%,transparent);color:var(--in)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:16px;padding:20px;display:grid;gap:12px}
+.empty-title{font-family:var(--font-display);font-weight:700;font-size:19px;margin:0}
+.empty p{margin:0;color:var(--muted)}
+.empty p.empty-title{color:var(--ink)}
+.bubbles{display:flex;flex-wrap:wrap;gap:8px}
+.bubble{font-size:14px;font-weight:600;padding:8px 12px;border-radius:16px 16px 16px 4px;background:var(--surface-2);text-align:left}
+.bubble:hover{background:var(--line)}
+
+/* ---------- composer ---------- */
+.composer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--bg);border-top:1px solid var(--line);box-shadow:var(--shadow-up);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.composer-inner{max-width:680px;margin:0 auto;display:grid;gap:8px}
+.chips,.tray{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tray{padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.chip{position:relative;height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.chip.in{background:color-mix(in srgb,var(--in) 13%,var(--surface));border-color:var(--in);color:var(--in)}
+.chip.loan{background:color-mix(in srgb,var(--loan) 13%,var(--surface));border-color:var(--loan);color:var(--loan)}
+.chip.soft{color:var(--muted)}
+.chip .caret{opacity:.55;font-size:10px}
+.chip.date.away{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.chip.date input{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;cursor:pointer}
+@media (pointer:fine){
+  .chip.date input{position:static;opacity:1;width:auto;height:auto;background:none;font-size:13px;font-weight:700;padding:0}
+  .chip.date span{display:none}
+}
+.compose-row{display:flex;gap:8px;align-items:center}
+#in-text{flex:1;min-width:0;height:50px;border-radius:25px;border:1.5px solid var(--line);background:var(--surface);padding:0 18px;font-size:16px;outline:none}
+#in-text:focus{border-color:var(--ink)}
+#in-text:disabled{opacity:.6}
+.send{min-width:50px;height:50px;border-radius:25px;background:var(--ink);color:var(--on-ink);display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;transition:padding .15s ease}
+.send.has-amt{padding:0 14px 0 16px}
+.send:disabled{opacity:.35;cursor:default}
+.hint{margin:0;font-size:13px;color:var(--muted);text-align:center}
+.hint.err{color:var(--neg);font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--composer-h,150px) + 12px);z-index:40;background:var(--ink);color:var(--on-ink);border-radius:14px;padding:10px 10px 10px 16px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;width:max-content;max-width:calc(100% - 32px);box-shadow:var(--shadow);animation:rise .2s ease}
+.toast button{color:var(--on-ink);font-weight:800;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--on-ink) 16%,transparent);flex:none}
+@keyframes rise{from{transform:translate(-50%,8px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+
+/* ---------- sheets ---------- */
+.sheet-wrap{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:22px 22px 0 0;padding-top:18px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));display:grid;gap:16px;align-content:start}
+@media (min-width:640px){.sheet-wrap{align-items:center;padding:24px}.sheet{border-radius:22px;padding-bottom:22px}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sheet h2{font-family:var(--font-display);font-size:22px;font-weight:800;margin:0;letter-spacing:-.015em;outline:none}
+.sheet h3{font-family:var(--font-display);font-size:16px;font-weight:700;margin:6px 0 0;letter-spacing:-.005em}
+.sheet p{margin:0}
+.field{display:grid;gap:7px;min-width:0}
+.field > span,.label{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field small{color:var(--muted);font-size:12.5px}
+.field input,.field select,.field textarea,.card input,.card select{height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 14px;font-size:16px;width:100%;min-width:0}
+.field textarea{height:140px;padding:12px 14px;font-size:14px;resize:vertical;line-height:1.4}
+.field input:focus,.field select:focus,.field textarea:focus,.card input:focus{outline:none;border-color:var(--ink)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface-2)}
+.seg.wrap{grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.seg button{height:38px;border-radius:10px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding:0 6px}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.sheet-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sheet-actions .btn{height:44px;border-radius:22px;padding:0 20px}
+.meta{font-size:13px;color:var(--muted)}
+.err-line{color:var(--neg);font-weight:700;font-size:13.5px}
+.cur-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cur-row input{width:90px;flex:none}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:8px;font-size:14px}
+.note strong{font-weight:800}
+.note code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;font-weight:700;letter-spacing:.08em;background:var(--surface-2);padding:4px 10px;border-radius:8px}
+.radio-row{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;font-weight:600}
+.radio-row label{display:inline-flex;align-items:center;gap:6px}
+.file-btn{position:relative;overflow:hidden}
+.file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.imp-list{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.imp-list li{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:13.5px}
+.imp-list li:first-child{border-top:0}
+.imp-list .d{color:var(--muted);font-weight:700;font-size:12px}
+.imp-list b{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imp-list small{color:var(--muted);font-weight:600}
+.imp-list .a{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.imp-list .a.in{color:var(--in)}
+.imp-list .more{display:block;text-align:center;color:var(--muted);font-weight:600}
+.imp-sum{font-size:14px;font-weight:700}
+.check{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.check input{width:20px;height:20px;accent-color:var(--ink);flex:none}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.plist li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.plist .nm{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist .sub{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatch{width:32px;height:32px;border-radius:50%;border:3px solid transparent}
+.swatch[aria-pressed="true"]{border-color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Cargando -->
+<div class="screen" id="scr-loading"><div class="spinner" aria-label="Cargando"></div></div>
+
+<!-- Entrar -->
+<div class="screen" id="scr-login" hidden>
+  <div class="logo"><svg class="brand-mark" viewBox="0 0 120 120" aria-hidden="true"><path d="M16 0 H104 A16 16 0 0 1 120 16 V26 H26 V120 H16 A16 16 0 0 1 0 104 V16 A16 16 0 0 1 16 0 Z" fill="var(--ink)"></path><path d="M120 32 V104 A16 16 0 0 1 104 120 H32 V94 H94 V32 Z" fill="var(--in)"></path><circle cx="60" cy="60" r="13" fill="var(--gold)"></circle></svg>cuadre</div>
+  <p class="tagline">Las cuentas de la casa, cuadradas. Anota como en el chat y sabe cuánto les queda.</p>
+  <button type="button" class="btn-google" id="btn-google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.5 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.3 0-11.7-4-13.6-9.7l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>Entrar con Google</button>
+  <p class="fine" id="login-err" hidden></p>
+  <p class="fine">Gratis 14 días, sin tarjeta. Al entrar aceptas los <a href="./terminos.html">términos</a> y la <a href="./privacidad.html">política de privacidad</a>.</p>
+</div>
+
+<!-- Crear familia o unirse -->
+<div class="screen" id="scr-onboard" hidden>
+  <div class="logo" style="font-size:40px"><svg class="brand-mark" style="width:38px;height:38px" viewBox="0 0 120 120" aria-hidden="true"><path d="M16 0 H104 A16 16 0 0 1 120 16 V26 H26 V120 H16 A16 16 0 0 1 0 104 V16 A16 16 0 0 1 16 0 Z" fill="var(--ink)"></path><path d="M120 32 V104 A16 16 0 0 1 104 120 H32 V94 H94 V32 Z" fill="var(--in)"></path><circle cx="60" cy="60" r="13" fill="var(--gold)"></circle></svg>cuadre</div>
+  <form class="card" id="form-crear" autocomplete="off">
+    <h2>Crea tu familia</h2>
+    <p>Escribe los nombres de quienes gastan en casa. Así podrán anotar «taxi 15 ana» y la app sabrá de quién es.</p>
+    <label class="field"><span>Nombre de la familia</span><input id="cf-nombre" maxlength="60" placeholder="Ej: Familia Martínez" required></label>
+    <div class="field"><span>Personas</span><div id="cf-personas" style="display:grid;gap:8px"></div><button type="button" class="link-btn" id="cf-add" style="justify-self:start">+ Agregar otra persona</button></div>
+    <div class="two">
+      <label class="field"><span>Moneda</span><select id="cf-moneda"><option value="S/">S/ soles</option><option value="$">$ dólares / pesos</option><option value="€">€ euros</option><option value="Bs">Bs</option><option value="Q">Q quetzales</option><option value="₡">₡ colones</option></select></label>
+      <label class="field"><span>Día en que cobran</span><input id="cf-cobro" type="number" inputmode="numeric" min="1" max="31" placeholder="Opcional"></label>
+    </div>
+    <p class="err-line" id="cf-err" hidden></p>
+    <button type="submit" class="btn primary wide" id="cf-go">Empezar</button>
+  </form>
+  <div class="or">o</div>
+  <form class="card" id="form-unirse" autocomplete="off">
+    <h2>Tengo un código</h2>
+    <p>Si tu pareja ya creó la familia, pídele el enlace o el código de invitación.</p>
+    <div class="person-input"><input id="un-code" maxlength="8" placeholder="Código, ej: 3F9A2C1B" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700" required><button type="submit" class="btn primary" id="un-go">Unirme</button></div>
+    <p class="err-line" id="un-err" hidden></p>
+  </form>
+  <button type="button" class="link-btn" id="ob-logout">Salir de esta cuenta</button>
+</div>
+
+<!-- La app -->
+<div class="app" id="scr-app" hidden>
+  <header class="top">
+    <div>
+      <h1><svg class="brand-mark" viewBox="0 0 120 120" aria-hidden="true"><path d="M16 0 H104 A16 16 0 0 1 120 16 V26 H26 V120 H16 A16 16 0 0 1 0 104 V16 A16 16 0 0 1 16 0 Z" fill="var(--ink)"></path><path d="M120 32 V104 A16 16 0 0 1 104 120 H32 V94 H94 V32 Z" fill="var(--in)"></path><circle cx="60" cy="60" r="13" fill="var(--gold)"></circle></svg>cuadre</h1>
+      <p class="family" id="family-line"></p>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="btn ghost" id="btn-import">Importar chat</button>
+      <button type="button" class="icon-btn" id="btn-settings" aria-label="Ajustes"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M18 7h2M4 17h3M12 17h8"/><circle cx="15.5" cy="7" r="2.3"/><circle cx="9.5" cy="17" r="2.3"/></svg></button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden><span id="banner-text"></span><button type="button" class="btn" id="banner-btn">Ver cómo renovar</button></div>
+
+  <div class="side">
+    <nav class="month" aria-label="Mes">
+      <button type="button" class="icon-btn" id="prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="month-mid"><h2 id="month-label">Este mes</h2><button type="button" class="link-btn" id="to-today" hidden>Volver a este mes</button></div>
+      <button type="button" class="icon-btn" id="next" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </nav>
+
+    <section class="balance" aria-live="polite">
+      <p class="eyebrow" id="eyebrow">Les queda este mes</p>
+      <p class="big" id="queda">S/&nbsp;0</p>
+      <div class="meter" id="meter"><span id="meter-fill"></span></div>
+      <p class="meter-note" id="meter-note">Anoten lo que entra y lo que sale para ver cuánto queda.</p>
+      <dl class="stats">
+        <div><dt>Entró</dt><dd id="st-in">S/&nbsp;0</dd></div>
+        <div><dt>Salió</dt><dd id="st-out">S/&nbsp;0</dd></div>
+        <div><dt id="st-3-label">Hoy</dt><dd id="st-3">S/&nbsp;0</dd></div>
+      </dl>
+      <p class="loanline" id="loanline" hidden></p>
+      <p class="perday" id="perday" hidden></p>
+    </section>
+
+    <section class="block" id="loans-block" hidden>
+      <div class="block-head"><h3>Les deben</h3><span class="block-total" id="loans-total"></span></div>
+      <ul class="rows" id="loans"></ul>
+    </section>
+    <section class="block"><h3>¿De quién es el gasto?</h3><ul class="rows" id="people"></ul></section>
+    <section class="block"><h3>¿En qué se va la plata?</h3><ul class="rows" id="cats"></ul></section>
+  </div>
+
+  <section class="ledger">
+    <div class="ledger-head">
+      <div><h3>Movimientos</h3><p class="ledger-hint">Toca uno para editarlo o borrarlo.</p></div>
+      <button type="button" class="filter-chip" id="filter-chip" hidden><span id="filter-label"></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <label class="search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="search" type="search" placeholder="Buscar en este mes (ej: taxi, farmacia)" aria-label="Buscar movimientos"></label>
+    <div id="list"></div>
+  </section>
+</div>
+
+<form class="composer" id="composer" autocomplete="off" hidden>
+  <div class="composer-inner">
+    <div class="tray" id="tray" hidden></div>
+    <div class="chips">
+      <button type="button" class="chip" id="chip-tipo" aria-label="Cambiar entre gasto, ingreso y préstamo">Gasto</button>
+      <button type="button" class="chip" id="chip-persona" aria-expanded="false"><i class="dot" id="chip-persona-dot"></i><span id="chip-persona-name">Familia</span><span class="caret" aria-hidden="true">▾</span></button>
+      <button type="button" class="chip" id="chip-cat" aria-expanded="false"><span id="chip-cat-name">Otros</span><span class="caret" aria-hidden="true">▾</span></button>
+      <label class="chip date" id="chip-date"><span id="date-label">Hoy</span><input type="date" id="in-date" aria-label="Fecha del movimiento"></label>
+    </div>
+    <div class="compose-row">
+      <input id="in-text" type="text" placeholder="Ej: mercado 120 familia" enterkeyhint="send" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="140" aria-label="Escribe qué fue, el monto y para quién">
+      <button type="submit" class="send" id="send" disabled aria-label="Anotar"><span id="send-amt"></span><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
+    </div>
+    <p class="hint" id="hint" hidden></p>
+  </div>
+</form>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!-- Editar movimiento -->
+<div class="sheet-wrap" id="edit-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <div class="sheet-head"><h2 id="edit-title" tabindex="-1">Editar movimiento</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="seg" id="ed-tipo" role="group" aria-label="Tipo"><button type="button" data-v="gasto">Gasto</button><button type="button" data-v="ingreso">Ingreso</button><button type="button" data-v="prestamo">Préstamo</button></div>
+    <div class="two">
+      <label class="field"><span>Monto</span><input id="ed-monto" inputmode="decimal" autocomplete="off"></label>
+      <label class="field"><span>Fecha</span><input id="ed-fecha" type="date"></label>
+    </div>
+    <label class="field" id="ed-deudor-wrap" hidden><span>A quién le prestaron</span><input id="ed-deudor" maxlength="60" autocomplete="off"></label>
+    <label class="field"><span id="ed-nota-label">Descripción</span><input id="ed-nota" maxlength="140" autocomplete="off"></label>
+    <div class="field"><span id="ed-persona-label">Para quién</span><div class="seg wrap" id="ed-persona" role="group" aria-label="Persona"></div></div>
+    <label class="field" id="ed-cat-wrap"><span>Categoría</span><select id="ed-cat"></select></label>
+    <label class="check" id="ed-cerrado-wrap" hidden><input type="checkbox" id="ed-cerrado"> Ya no se va a cobrar (quitarlo de “Les deben”)</label>
+    <p class="meta" id="ed-meta"></p>
+    <p class="err-line" id="ed-err" hidden></p>
+    <div class="sheet-actions"><button type="button" class="btn danger" id="ed-del">Eliminar</button><button type="button" class="btn primary" id="ed-save">Guardar cambios</button></div>
+  </div>
+</div>
+
+<!-- Registrar pago de un préstamo -->
+<div class="sheet-wrap" id="pay-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+    <div class="sheet-head"><h2 id="pay-title" tabindex="-1">Registrar pago</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="meta" id="pay-meta"></p>
+    <div class="two">
+      <label class="field"><span>Les devolvió</span><input id="pay-monto" inputmode="decimal" autocomplete="off"></label>
+      <label class="field"><span>Fecha</span><input id="pay-fecha" type="date"></label>
+    </div>
+    <p class="err-line" id="pay-err" hidden></p>
+    <div class="sheet-actions"><span></span><button type="button" class="btn primary" id="pay-save">Guardar pago</button></div>
+  </div>
+</div>
+
+<!-- Ajustes -->
+<div class="sheet-wrap" id="set-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="set-title">
+    <div class="sheet-head"><h2 id="set-title" tabindex="-1">Ajustes</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+
+    <div class="note" id="plan-note"><strong id="plan-title">Tu plan</strong><p id="plan-text"></p><div id="plan-pay" hidden style="display:grid;gap:8px"><p id="plan-instr"></p><a class="btn primary" id="plan-wa" target="_blank" rel="noopener">Avisar por WhatsApp que pagué</a></div></div>
+
+    <h3>Personas</h3>
+    <ul class="plist" id="set-personas"></ul>
+    <button type="button" class="btn ghost" id="set-add-persona">+ Agregar persona</button>
+
+    <h3>Quiénes anotan</h3>
+    <ul class="plist" id="set-miembros"></ul>
+    <button type="button" class="btn primary" id="set-invitar">Invitar a mi pareja</button>
+    <div class="note" id="inv-box" hidden><strong>Enlace de invitación</strong><p>Mándalo por WhatsApp. Sirve una sola vez y vence en 7 días.</p><p><code id="inv-code"></code></p><div class="cur-row"><button type="button" class="btn ghost" id="inv-copy">Copiar enlace</button><a class="btn ghost" id="inv-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a></div></div>
+
+    <h3>Dinero</h3>
+    <div class="field"><span>Moneda</span><div class="cur-row"><input id="set-moneda" maxlength="5" aria-label="Símbolo de moneda" autocomplete="off"><button type="button" class="chip" data-m="S/">S/</button><button type="button" class="chip" data-m="$">$</button><button type="button" class="chip" data-m="€">€</button><button type="button" class="chip" data-m="Bs">Bs</button><button type="button" class="chip" data-m="Q">Q</button><button type="button" class="chip" data-m="₡">₡</button></div></div>
+    <label class="field"><span>Día en que cobran</span><input id="set-cobro" type="number" inputmode="numeric" min="1" max="31" placeholder="Fin de mes"><small>Se usa para calcular cuánto pueden gastar por día hasta el próximo cobro.</small></label>
+    <div class="field"><span>Cómo escriben los montos</span><div class="seg" id="set-formato" role="group" aria-label="Formato de números"><button type="button" data-v="punto">1,250.50</button><button type="button" data-v="coma">1.250,50</button></div></div>
+
+    <h3>Respaldo</h3>
+    <div class="cur-row"><button type="button" class="btn ghost" id="set-export">Descargar el mes en CSV</button><span class="btn ghost file-btn">Restaurar respaldo JSON<input type="file" id="set-restore" accept=".json,application/json" aria-label="Restaurar respaldo"></span></div>
+    <p class="meta" id="restore-msg" hidden></p>
+
+    <h3>Cuenta</h3>
+    <p class="meta" id="set-cuenta"></p>
+    <div class="cur-row"><button type="button" class="btn ghost" id="set-logout">Cerrar sesión</button><a class="btn ghost" id="set-admin" href="./admin.html" hidden>Panel de administración</a></div>
+    <p class="meta"><a href="./privacidad.html">Privacidad</a> · <a href="./terminos.html">Términos</a></p>
+  </div>
+</div>
+
+<!-- Persona: agregar / editar -->
+<div class="sheet-wrap" id="per-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="per-title">
+    <div class="sheet-head"><h2 id="per-title" tabindex="-1">Persona</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <label class="field"><span>Nombre</span><input id="per-nombre" maxlength="30" autocomplete="off"></label>
+    <label class="field"><span>Apodos (separados por coma)</span><input id="per-apodos" placeholder="Ej: moi, papá" autocomplete="off"><small>Así la app también reconoce «taxi 15 moi».</small></label>
+    <div class="field"><span>Color</span><div class="swatches" id="per-colores"></div></div>
+    <p class="err-line" id="per-err" hidden></p>
+    <div class="sheet-actions"><button type="button" class="btn danger" id="per-del">Quitar</button><button type="button" class="btn primary" id="per-save">Guardar</button></div>
+  </div>
+</div>
+
+<!-- Importar chat -->
+<div class="sheet-wrap" id="imp-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="imp-title">
+    <div class="sheet-head"><h2 id="imp-title" tabindex="-1">Importar del chat</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="meta">En WhatsApp, abre el chat donde anotan y elige <b>Más → Exportar chat → Sin archivos</b>. Pega aquí el texto o carga el archivo .txt.</p>
+    <label class="field"><span>Mensajes</span><textarea id="imp-text" placeholder="21/10/26, 9:15 a. m. - Luis: almuerzo 18&#10;21/10/26, 1:40 p. m. - Ana: mercado 230 familia"></textarea></label>
+    <div class="cur-row"><span class="btn ghost file-btn">Cargar archivo .txt<input type="file" id="imp-file" accept=".txt,text/plain" aria-label="Cargar archivo del chat"></span></div>
+    <div class="field"><span class="label">Si el mensaje no dice para quién</span><div class="radio-row"><label><input type="radio" name="imp-modo" value="familia" checked> Va a Familia</label><label><input type="radio" name="imp-modo" value="autor"> Va a quien lo escribió</label></div></div>
+    <p class="imp-sum" id="imp-sum"></p>
+    <ul class="imp-list" id="imp-list" hidden></ul>
+    <div class="sheet-actions"><span></span><button type="button" class="btn primary" id="imp-go" disabled>Importar</button></div>
+  </div>
+</div>
+
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

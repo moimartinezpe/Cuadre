@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cuadre · Administración</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#EEF2EC;--surface:#fff;--line:#D1D9CD;--ink:#14201A;--muted:#56655C;--in:#1A8150;--neg:#BB3A26;--gold:#E0A21B}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1310;--surface:#161D19;--line:#2A352E;--ink:#E5EDE6;--muted:#98A79E;--in:#4CC48B;--neg:#F07D64;--gold:#F0B44A}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Manrope,"Segoe UI",system-ui,sans-serif;padding:20px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+h1{margin:0;font-size:26px;letter-spacing:-.02em}
+a{color:inherit}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
+.fam{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.fam b{font-size:17px}.fam small{display:block;color:var(--muted)}
+.st{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:9px;background:var(--line)}
+.st.ok{background:color-mix(in srgb,var(--in) 18%,transparent);color:var(--in)}.st.bad{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,input,select{font:inherit;color:inherit}
+input,select{height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);padding:0 12px}
+input.n{width:90px}
+.btn{height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer}
+.btn.p{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cuadre · Administración</h1>
+  <p class="muted" id="who">Cargando…</p>
+  <div id="list"></div>
+  <p><a href="./">← Volver a la app</a></p>
+</div>
+<script type="module" src="./js/admin.js"></script>
+</body>
+</html>
