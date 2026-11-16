@@ -160,6 +160,7 @@ function renderHeader() {
   $("btn-members").setAttribute("aria-label", `${ms.length} ${ms.length === 1 ? "persona anota" : "personas anotan"}${enLinea.length ? `; en línea: ${enLinea.join(", ")}` : ""}`);
   $("btn-invite").classList.toggle("strong", soloEnCasa());
   $("solo").hidden = !miembros.length || !soloEnCasa() || lsGet("cuadre.solo." + fam.id) === "no";
+  renderInstall();
 }
 function renderBanner() {
   const b = $("banner");
@@ -652,6 +653,46 @@ $("set-miembros").addEventListener("click", async e => {
   if (s2) { localStorage.removeItem("cuadre.fam"); location.href = location.pathname; return; }
   await loadMiembros(); syncSettingsForm(); toast("Ya no es parte de la familia. Sus movimientos se quedan.");
 });
+
+/* acceso directo: agregar a la pantalla de inicio */
+let installEvt = null;
+const UA = navigator.userAgent;
+const esStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const esIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const esAndroid = /Android/.test(UA);
+const enAppAjena = /FBAN|FBAV|Instagram|Line\/|WhatsApp|TikTok|musical_ly|; wv\)/.test(UA);
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; renderInstall(); });
+addEventListener("appinstalled", () => { installEvt = null; lsSet("cuadre.inst", "ok"); renderInstall(); toast("¡Listo! Cuadre ya está en tu pantalla de inicio."); });
+function renderInstall() {
+  const puede = !esStandalone() && lsGet("cuadre.inst") !== "ok";
+  $("set-install").hidden = !puede;
+  // una tarjeta a la vez: primero «Anoten juntos», luego esta
+  $("inst").hidden = !puede || !fam || lsGet("cuadre.inst") === "no" || !$("solo").hidden;
+}
+function pasosInstalar() {
+  const k = t => `<span class="k">${t}</span>`;
+  if (enAppAjena) return { sub: "Estás dentro de otra app (WhatsApp, Facebook…). Primero ábrela en tu navegador:", pasos: [`Toca ${k("⋮")} o ${k("···")} arriba`, `Elige ${k(esIOS ? "Abrir en Safari" : "Abrir en Chrome")}`, `Vuelve a tocar ${k("📲 Agregar")} en Cuadre`] };
+  if (esIOS) return { sub: "En iPhone se hace desde el botón Compartir:", pasos: [`Toca ${k("Compartir ⬆")} (abajo en Safari, arriba en Chrome)`, `Baja y toca ${k("Agregar a inicio")}`, `Toca ${k("Agregar")} arriba a la derecha`] };
+  if (esAndroid) return { sub: "Desde el menú del navegador:", pasos: [`Toca ${k("⋮")} arriba a la derecha`, `Toca ${k("Agregar a pantalla de inicio")} o ${k("Instalar app")}`, `Confirma con ${k("Agregar")}`] };
+  return { sub: "En la computadora, desde Chrome o Edge:", pasos: [`En la barra de direcciones toca el ícono ${k("⊕ Instalar")}`, `O abre el menú ${k("⋮")} → ${k("Instalar Cuadre")}`, "Cuadre se abrirá en su propia ventana"] };
+}
+async function instalar() {
+  if (installEvt) {
+    installEvt.prompt();
+    const { outcome } = await installEvt.userChoice.catch(() => ({}));
+    installEvt = null;
+    if (outcome === "accepted") lsSet("cuadre.inst", "ok");
+    renderInstall(); return;
+  }
+  const { sub, pasos } = pasosInstalar();
+  $("ins-sub").textContent = sub;
+  $("ins-steps").innerHTML = pasos.map(p => `<li><span>${p}</span></li>`).join("");
+  if (!$("set-wrap").hidden) $("set-wrap").hidden = true;
+  openSheet("ins-wrap");
+}
+$("inst-go").addEventListener("click", instalar);
+$("set-install").addEventListener("click", instalar);
+$("inst-close").addEventListener("click", () => { lsSet("cuadre.inst", "no"); renderInstall(); toast("Cuando quieras, está en Ajustes: «Agregar a pantalla de inicio»."); });
 
 /* invitar */
 function renderInvPeople() {

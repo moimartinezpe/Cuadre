@@ -1,5 +1,5 @@
 // Service worker: la app abre rápido y funciona para ver datos cacheados; los datos siempre van a Supabase.
-const CACHE = "cuadre-v1";
+const CACHE = "cuadre-v2";
 const SHELL = ["./", "./index.html", "./js/app.js", "./js/parser.js", "./js/config.js", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png"];
 
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

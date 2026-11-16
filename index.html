@@ -302,6 +302,12 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
 .inv-code{margin:0;text-align:center;font-size:13px;color:var(--muted);font-weight:600}
 .inv-code code{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:.06em}
 .inv-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.inst-art{width:46px;height:46px;border-radius:12px;background:#14201A;display:grid;place-items:center}
+.ins-steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:s}
+.ins-steps li{display:flex;gap:14px;align-items:center;font-size:15.5px;font-weight:600;line-height:1.35;counter-increment:s}
+.ins-steps li::before{content:counter(s);flex:none;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:800;font-size:14px}
+.ins-steps .k{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-weight:800;white-space:nowrap}
+.ins-note{font-size:13.5px;color:var(--muted);font-weight:600;margin:0}
 /* ---------- sugerencias y varios en un mensaje ---------- */
 .sugs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}
 .sugs::-webkit-scrollbar{display:none}
@@ -393,6 +399,12 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <div class="solo-art" aria-hidden="true"><i></i><i></i><b>+</b></div>
     <div class="solo-txt"><strong>Anoten juntos</strong><p>Invita a tu pareja: cada uno anota desde su celular y ven lo mismo al instante.</p></div>
     <div class="solo-act"><button type="button" class="btn primary" id="solo-invite">Invitar</button><button type="button" class="icon-btn plain" id="solo-close" aria-label="Ocultar"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  </div>
+
+  <div class="solo" id="inst" hidden>
+    <div class="inst-art" aria-hidden="true"><svg viewBox="0 0 120 120" width="26" height="26"><path d="M16 0 H104 A16 16 0 0 1 120 16 V26 H26 V120 H16 A16 16 0 0 1 0 104 V16 A16 16 0 0 1 16 0 Z" fill="#F1F6EF"/><path d="M120 32 V104 A16 16 0 0 1 104 120 H32 V94 H94 V32 Z" fill="#4CC48B"/><circle cx="60" cy="60" r="13" fill="#F0B44A"/></svg></div>
+    <div class="solo-txt"><strong>Tenla a un toque</strong><p>Agrégala a tu pantalla de inicio y ábrela como cualquier app.</p></div>
+    <div class="solo-act"><button type="button" class="btn primary" id="inst-go">Agregar</button><button type="button" class="icon-btn plain" id="inst-close" aria-label="Ocultar"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   </div>
 
   <div class="side">
@@ -518,6 +530,7 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
 
     <h3>Cuenta</h3>
     <p class="meta" id="set-cuenta"></p>
+    <button type="button" class="btn primary" id="set-install" hidden>📲 Agregar a pantalla de inicio</button>
     <div class="cur-row"><button type="button" class="btn ghost" id="set-logout">Cerrar sesión</button><a class="btn ghost" id="set-admin" href="./admin.html" hidden>Panel de administración</a></div>
     <p class="meta"><a href="./privacidad.html">Privacidad</a> · <a href="./terminos.html">Términos</a></p>
   </div>
@@ -535,6 +548,16 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
       <p class="inv-code"><span>Código</span> <code id="inv-code">…</code> <span class="meta" id="inv-meta"></span></p>
     </div>
     <div class="inv-foot"><button type="button" class="link-btn" id="inv-new">Anular el enlace y crear otro</button><button type="button" class="btn ghost" id="inv-later" hidden>Ahora no</button></div>
+  </div>
+</div>
+
+<!-- Agregar a pantalla de inicio -->
+<div class="sheet-wrap" id="ins-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ins-title">
+    <div class="sheet-head"><h2 id="ins-title" tabindex="-1">Agrégala a tu inicio</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="meta" id="ins-sub">Así Cuadre queda con su ícono, junto a tus otras apps.</p>
+    <ol class="ins-steps" id="ins-steps"></ol>
+    <button type="button" class="btn primary wide" data-close>Entendido</button>
   </div>
 </div>
 
