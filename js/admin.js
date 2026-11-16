@@ -13,10 +13,14 @@ async function load() {
   if (!session) { $("who").innerHTML = 'Entra primero en <a href="./">la app</a> con tu cuenta de administrador.'; return; }
   const { data, error } = await sb.rpc("admin_familias");
   if (error || !data) { $("who").textContent = "No tienes acceso de administrador (" + (error ? error.message : "sin datos") + ")."; return; }
-  $("who").textContent = `${session.user.email} · ${data.length} familias · ${data.filter(f => f.plan_hasta >= hoy).length} activas`;
+  const activas = data.filter(f => f.plan_hasta >= hoy).length;
+  const cobrado = data.reduce((t, f) => t + Number(f.pagado || 0), 0);
+  $("who").textContent = `${session.user.email} · ${data.length} familias · ${activas} activas · S/ ${cobrado.toFixed(2)} cobrados en total`;
   $("list").innerHTML = data.map(f => {
     const activa = f.plan_hasta && f.plan_hasta >= hoy;
-    return `<div class="card"><div class="fam"><div><b>${esc(f.nombre)}</b> <span class="st ${activa ? "ok" : "bad"}">${activa ? "activa hasta " + fecha(f.plan_hasta) : "vencida " + fecha(f.plan_hasta)}</span><small>${esc(f.correos || "")}</small><small>${f.miembros} ${f.miembros == 1 ? "persona" : "personas"} · ${f.movimientos} movimientos · último ${f.ultimo ? new Date(f.ultimo).toLocaleDateString("es-PE") : "nunca"} · creada ${new Date(f.created_at).toLocaleDateString("es-PE")}</small></div></div>
+    const dias = f.plan_hasta ? Math.round((new Date(f.plan_hasta + "T00:00:00") - new Date(hoy + "T00:00:00")) / 864e5) : null;
+    const estado = activa ? (dias <= 5 ? `vence en ${dias} ${dias === 1 ? "día" : "días"}` : `activa hasta ${fecha(f.plan_hasta)}`) : `vencida ${fecha(f.plan_hasta)}`;
+    return `<div class="card"><div class="fam"><div><b>${esc(f.nombre)}</b> <span class="st ${activa ? (dias <= 5 ? "" : "ok") : "bad"}">${estado}</span><small>Personas: ${esc(f.nombres || "—")}</small><small>Cuentas: ${esc(f.correos || "")}</small><small>Pagado: S/ ${Number(f.pagado || 0).toFixed(2)}${f.ultimo_pago ? " · último pago " + fecha(f.ultimo_pago) : " · aún no paga"}</small><small>${f.miembros} ${f.miembros == 1 ? "persona" : "personas"} · ${f.movimientos} movimientos · último ${f.ultimo ? new Date(f.ultimo).toLocaleDateString("es-PE") : "nunca"} · creada ${new Date(f.created_at).toLocaleDateString("es-PE")}</small></div></div>
       <form class="row" data-fid="${f.id}"><select name="dias"><option value="30">+30 días (mes)</option><option value="365">+365 días (año)</option><option value="14">+14 días (prueba)</option><option value="7">+7 días</option></select><input class="n" name="monto" inputmode="decimal" placeholder="Monto" value=""><select name="metodo"><option value="yape">Yape</option><option value="plin">Plin</option><option value="transferencia">Transferencia</option><option value="cortesia">Cortesía</option></select><input name="nota" placeholder="Nota (opcional)"><button class="btn p" type="submit">Activar</button></form></div>`;
   }).join("") || "<p class='muted'>Todavía no hay familias.</p>";
   document.querySelectorAll("form[data-fid]").forEach(form => form.addEventListener("submit", async e => {

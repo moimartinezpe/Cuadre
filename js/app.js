@@ -60,7 +60,8 @@ let personas = [];             // [{ id, nombre, color, apodos, es_familia, keys
 let P = {};                    // personas por id
 let familiaId = null;          // id de la persona "Familia"
 let all = [];                  // todos los movimientos de la familia, normalizados
-let miembros = [];
+let miembros = [];             // [{ user_id, rol, nombre, email, persona_id }]
+let online = new Set();        // user_id de quienes tienen la app abierta ahora
 let channel = null, isAdmin = false;
 const state = { mes: today().slice(0, 7), filter: null, search: "", fecha: today(), fechaManual: false, loading: true };
 let docs = [], loanDocs = [], loans = [], openLoans = [], carry = 0;
@@ -81,6 +82,7 @@ function normRow(r) {
     nota: r.nota || "", fecha: r.fecha, mes: String(r.fecha).slice(0, 7),
     deudor: r.deudor || "", prestamoId: r.prestamo_id || null, cerrado: !!r.cerrado, origen: r.origen || null,
     creado: r.created_at ? new Date(r.created_at).getTime() : 0, por: r.created_by || null,
+    editadoPor: r.updated_by || null, editado: r.updated_at ? new Date(r.updated_at).getTime() : 0,
   };
 }
 function derive() {
@@ -101,9 +103,20 @@ function removeLocal(id) { all = all.filter(x => x.id !== id); }
 
 /* ---------- pantallas ---------- */
 function show(id) {
-  for (const s of ["scr-loading", "scr-login", "scr-onboard", "scr-app"]) $(s).hidden = s !== id;
+  for (const s of ["scr-loading", "scr-login", "scr-onboard", "scr-join", "scr-app"]) $(s).hidden = s !== id;
   $("composer").hidden = id !== "scr-app";
 }
+
+/* ---------- quién es quién ---------- */
+const yo = () => miembros.find(m => m.user_id === (user && user.id));
+function nombreDe(uid) {
+  if (!uid) return "";
+  const m = miembros.find(x => x.user_id === uid);
+  if (!m) return "alguien que ya no está";
+  if (m.persona_id && P[m.persona_id]) return P[m.persona_id].nombre;
+  return (m.nombre || m.email || "alguien").split(" ")[0];
+}
+const varios = () => miembros.length > 1;
 
 /* ---------- render ---------- */
 function totals() {
@@ -125,6 +138,9 @@ function renderAll() {
 }
 function renderHeader() {
   $("family-line").innerHTML = `<span style="color:var(--ink)">${esc(fam.nombre)}</span>` + personas.map(p => `<span><i class="dot" style="background:${p.color}"></i>${esc(p.nombre)}</span>`).join("");
+  const otros = [...online].filter(u => u !== user.id).map(nombreDe).filter(Boolean);
+  $("online").textContent = otros.length ? `En línea ahora: ${otros.join(", ")}` : "";
+  $("online").hidden = !otros.length;
 }
 function renderBanner() {
   const b = $("banner");
@@ -227,7 +243,7 @@ function movHTML(d) {
   let estado = "";
   if (d.tipo === "prestamo") { const l = loans.find(x => x.id === d.id); if (l) estado = l.pendiente <= 0 ? `<span class="pill ok">pagado</span>` : l.cerrado ? `<span class="pill">cerrado</span>` : `<span>debe ${esc(fmt(l.pendiente))}</span>`; }
   const cls = entra(d.tipo) ? " in" : d.tipo === "prestamo" ? " loan" : "";
-  return `<button type="button" class="mov" data-id="${d.id}"><i class="dot" style="background:${p.color}"></i><span class="mov-main"><span class="mov-title">${esc(titleOf(d))}</span><span class="mov-meta"><span>${esc(c.nombre)}</span><span aria-hidden="true">·</span><span>${esc(p.nombre)}</span>${estado ? `<span aria-hidden="true">·</span>${estado}` : ""}</span></span><span class="mov-amt${cls}">${esc(signed(d))}</span></button>`;
+  return `<button type="button" class="mov" data-id="${d.id}"><i class="dot" style="background:${p.color}"></i><span class="mov-main"><span class="mov-title">${esc(titleOf(d))}</span><span class="mov-meta"><span>${esc(c.nombre)}</span><span aria-hidden="true">·</span><span>${esc(p.nombre)}</span>${estado ? `<span aria-hidden="true">·</span>${estado}` : ""}${varios() && d.por ? `<span aria-hidden="true">·</span><span class="who">por ${esc(nombreDe(d.por))}</span>` : ""}</span></span><span class="mov-amt${cls}">${esc(signed(d))}</span></button>`;
 }
 function emptyHTML() {
   const nombre = mesNombre(state.mes);
@@ -374,7 +390,7 @@ function openEdit(id) {
   const del = $("ed-del"); del.textContent = "Eliminar"; del.classList.remove("armed");
   del.disabled = !writable(); $("ed-save").disabled = !writable();
   const l = d.tipo === "prestamo" && loans.find(x => x.id === d.id);
-  $("ed-meta").textContent = (d.creado ? `Anotado ${cuando(isoOf(new Date(d.creado)))}` : "Anotado") + (d.origen === "whatsapp" ? " · importado del chat" : d.origen === "respaldo" ? " · restaurado" : "") + (l && l.pagado > 0 ? ` · ya devolvió ${fmt(l.pagado)}, debe ${fmt(l.pendiente)}` : "");
+  $("ed-meta").textContent = (d.creado ? `Anotado ${cuando(isoOf(new Date(d.creado)))}` : "Anotado") + (d.por ? ` por ${nombreDe(d.por)}` : "") + (d.editado && d.editadoPor ? ` · editado por ${nombreDe(d.editadoPor)} ${cuando(isoOf(new Date(d.editado)))}` : "") + (d.origen === "whatsapp" ? " · importado del chat" : d.origen === "respaldo" ? " · restaurado" : "") + (l && l.pagado > 0 ? ` · ya devolvió ${fmt(l.pagado)}, debe ${fmt(l.pendiente)}` : "");
   openSheet("edit-wrap");
 }
 $("ed-tipo").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b) applyEdTipo(b.dataset.v, $("ed-cat").value); });
@@ -439,7 +455,9 @@ function syncSettingsForm() {
   segSet($("set-formato"), fam.formato);
   const dc = $("set-cobro"); if (D.activeElement !== dc) dc.value = fam.dia_cobro ? String(fam.dia_cobro) : "";
   $("set-personas").innerHTML = personas.map(p => `<li><i class="dot" style="background:${p.color};width:12px;height:12px"></i><span class="nm">${esc(p.nombre)}<span class="sub">${p.es_familia ? "Gastos en conjunto" : (p.apodos && p.apodos.length ? "También: " + esc(p.apodos.join(", ")) : "Sin apodos")}</span></span><button type="button" class="btn ghost small" data-per="${p.id}">Editar</button></li>`).join("");
-  $("set-miembros").innerHTML = miembros.map(m => `<li><span class="nm">${esc(m.nombre || m.email)}<span class="sub">${esc(m.email || "")}${m.rol === "dueno" ? " · creó la familia" : ""}${m.user_id === user.id ? " · tú" : ""}</span></span></li>`).join("") || `<li class="muted-empty">Solo tú por ahora.</li>`;
+  renderMiembros();
+  renderSoy($("set-soy"));
+  cargarInvitacion();
   $("set-cuenta").textContent = `Entraste como ${user.email}. Familia: ${fam.nombre}.`;
   $("set-admin").hidden = !isAdmin;
   const pn = $("plan-note");
@@ -499,14 +517,52 @@ $("per-del").addEventListener("click", async () => {
   await loadPersonas(); await loadMovs(); renderAll(); updateComposer(); syncSettingsForm(); closeSheet("per-wrap"); toast("Persona quitada.");
 });
 
-/* invitar */
-$("set-invitar").addEventListener("click", async () => {
-  const { data, error } = await sb.rpc("crear_invitacion", { fid: fam.id });
+/* miembros */
+function renderMiembros() {
+  const soyDueno = yo() && yo().rol === "dueno";
+  $("set-miembros").innerHTML = miembros.map(m => {
+    const per = m.persona_id && P[m.persona_id];
+    const yoMismo = m.user_id === user.id;
+    const accion = yoMismo ? (miembros.length > 1 ? `<button type="button" class="btn ghost small" data-salir>Salir</button>` : "")
+      : soyDueno ? `<button type="button" class="btn ghost small" data-quitar="${m.user_id}">Quitar</button>` : "";
+    return `<li>${per ? `<i class="dot" style="background:${per.color};width:12px;height:12px"></i>` : ""}<span class="nm">${esc(per ? per.nombre : (m.nombre || m.email))}${yoMismo ? " (tú)" : ""}<span class="sub">${esc(m.email || "")}${online.has(m.user_id) && !yoMismo ? " · en línea ahora" : ""}</span></span>${m.rol === "dueno" ? '<span class="tagrol">Creó la familia</span>' : ""}${accion}</li>`;
+  }).join("");
+}
+function renderSoy(box) {
+  const mine = yo() ? yo().persona_id : null;
+  const tomadas = new Set(miembros.filter(m => m.user_id !== user.id && m.persona_id).map(m => m.persona_id));
+  box.innerHTML = personas.filter(p => !p.es_familia).map(p => `<button type="button" data-soy="${p.id}" aria-pressed="${p.id === mine}"${tomadas.has(p.id) ? ' title="Ya la eligió otra cuenta"' : ""}><i class="dot" style="background:${p.color}"></i>${esc(p.nombre)}</button>`).join("");
+}
+async function elegirSoy(pid) {
+  const { error } = await sb.rpc("soy", { fid: fam.id, p_persona: pid });
   if (error) return writeError(error);
-  const link = `${location.origin}${location.pathname}?inv=${data}`;
-  $("inv-code").textContent = data; $("inv-box").hidden = false; $("inv-box").dataset.link = link;
-  $("inv-wa").href = `https://wa.me/?text=${encodeURIComponent(`Te invito a anotar las cuentas de la casa conmigo en Cuadre. Entra con tu Google aquí: ${link}`)}`;
+  await loadMiembros(); renderAll(); syncSettingsForm();
+  toast(`Listo, eres ${P[pid].nombre}.`);
+}
+$("set-soy").addEventListener("click", e => { const b = e.target.closest("[data-soy]"); if (b) elegirSoy(b.dataset.soy); });
+$("soy-opts").addEventListener("click", async e => { const b = e.target.closest("[data-soy]"); if (!b) return; await elegirSoy(b.dataset.soy); closeSheet("soy-wrap"); });
+$("set-miembros").addEventListener("click", async e => {
+  const q = e.target.closest("[data-quitar]"), s2 = e.target.closest("[data-salir]");
+  const btn = q || s2; if (!btn) return;
+  if (!btn.dataset.armed) { btn.dataset.armed = "1"; btn.textContent = q ? "¿Seguro? Toca otra vez" : "¿Salir? Toca otra vez"; btn.classList.add("danger"); return; }
+  const uid = q ? q.dataset.quitar : user.id;
+  const { error } = await sb.rpc("quitar_miembro", { fid: fam.id, uid });
+  if (error) return writeError(error);
+  if (s2) { localStorage.removeItem("cuadre.fam"); location.href = location.pathname; return; }
+  await loadMiembros(); syncSettingsForm(); toast("Ya no es parte de la familia. Sus movimientos se quedan.");
 });
+
+/* invitar */
+async function cargarInvitacion(nueva) {
+  const { data, error } = await sb.rpc(nueva ? "nueva_invitacion" : "crear_invitacion", { fid: fam.id });
+  if (error) { $("inv-code").textContent = "—"; return writeError(error); }
+  const link = `${location.origin}${location.pathname}?inv=${data}`;
+  $("inv-code").textContent = data; $("inv-box").dataset.link = link;
+  $("inv-meta").textContent = "o comparte el código";
+  $("inv-wa").href = `https://wa.me/?text=${encodeURIComponent(`Te invito a llevar las cuentas de la casa conmigo en Cuadre (${fam.nombre}). Entra con tu Google aquí: ${link}`)}`;
+  if (nueva) toast("Listo: el enlace anterior ya no sirve.");
+}
+$("inv-new").addEventListener("click", () => cargarInvitacion(true));
 $("inv-copy").addEventListener("click", async () => { const link = $("inv-box").dataset.link; try { await navigator.clipboard.writeText(link); toast("Enlace copiado."); } catch { prompt("Copia este enlace:", link); } });
 
 /* respaldo: CSV y restaurar JSON */
@@ -608,14 +664,36 @@ async function refreshFamily() {
 }
 function subscribe() {
   if (channel) sb.removeChannel(channel);
-  channel = sb.channel("fam-" + fam.id)
+  channel = sb.channel("fam-" + fam.id, { config: { presence: { key: user.id } } })
     .on("postgres_changes", { event: "*", schema: "public", table: "movimientos", filter: `family_id=eq.${fam.id}` }, payload => {
-      if (payload.eventType === "DELETE") removeLocal(payload.old.id); else upsertLocal(payload.new);
+      let aviso = "";
+      if (payload.eventType === "DELETE") {
+        const antes = all.find(x => x.id === payload.old.id);
+        if (antes) aviso = `Se borró: ${titleOf(antes)} ${signed(antes)}`;   // si aún estaba aquí, lo borró otra persona
+        removeLocal(payload.old.id);
+      } else {
+        upsertLocal(payload.new);
+        const d = normRow(payload.new), quien = payload.eventType === "INSERT" ? payload.new.created_by : payload.new.updated_by;
+        if (quien && quien !== user.id) aviso = `${nombreDe(quien)} ${payload.eventType === "INSERT" ? "anotó" : "cambió"}: ${titleOf(d)} ${signed(d)}`;
+      }
       renderAll(); updateComposer();
+      if (aviso) toast(aviso);
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `family_id=eq.${fam.id}` }, async payload => {
+      const antes = new Set(miembros.map(m => m.user_id));
+      await loadMiembros(); renderAll();
+      if (!$("set-wrap").hidden) syncSettingsForm();
+      const nuevo = miembros.find(m => !antes.has(m.user_id));
+      if (payload.eventType === "INSERT" && nuevo && nuevo.user_id !== user.id) toast(`${nombreDe(nuevo.user_id)} se unió a ${fam.nombre}.`);
+      if (!miembros.some(m => m.user_id === user.id)) { toast("Ya no eres parte de esta familia."); setTimeout(() => location.reload(), 1500); }
+    })
+    .on("presence", { event: "sync" }, () => {
+      online = new Set(Object.values(channel.presenceState()).flat().map(p => p.uid));
+      renderHeader(); if (!$("set-wrap").hidden) renderMiembros();
     })
     .on("postgres_changes", { event: "*", schema: "public", table: "personas", filter: `family_id=eq.${fam.id}` }, async () => { await loadPersonas(); renderAll(); updateComposer(); })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "families", filter: `id=eq.${fam.id}` }, payload => { fam = { ...fam, ...payload.new }; renderAll(); updateComposer(); })
-    .subscribe();
+    .subscribe(status => { if (status === "SUBSCRIBED") channel.track({ uid: user.id }); });
 }
 D.addEventListener("visibilitychange", async () => {
   if (D.hidden || !fam) return;
@@ -631,6 +709,8 @@ async function openFamily(f) {
   show("scr-app"); renderAll(); updateComposer();
   await Promise.all([loadMovs(), loadMiembros()]);
   renderAll(); updateComposer(); subscribe();
+  const sinNombre = yo() && !yo().persona_id && personas.some(p => !p.es_familia);
+  if (sinNombre && !localStorage.getItem("cuadre.soy." + fam.id)) { localStorage.setItem("cuadre.soy." + fam.id, "1"); renderSoy($("soy-opts")); openSheet("soy-wrap"); }
   const { data: adm } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   isAdmin = !!adm;
 }
@@ -650,17 +730,61 @@ $("form-crear").addEventListener("submit", async e => {
   const { data, error } = await sb.rpc("crear_familia", { p_nombre: nombre || "Mi familia", p_personas: pers, p_moneda: $("cf-moneda").value, p_dia_cobro: parseInt($("cf-cobro").value, 10) || 0 });
   $("cf-go").disabled = false;
   if (error) { err.textContent = error.message; err.hidden = false; return; }
+  // Quien crea la familia es la primera persona de la lista (viene con su nombre de Google)
+  const { data: primera } = await sb.from("personas").select("id").eq("family_id", data).eq("es_familia", false).order("orden").limit(1).maybeSingle();
+  if (primera) await sb.rpc("soy", { fid: data, p_persona: primera.id });
+  localStorage.setItem("cuadre.soy." + data, "1");
   const { data: f } = await sb.from("families").select("*").eq("id", data).single();
-  await openFamily(f); toast("¡Listo! Anoten su primer gasto.");
+  await openFamily(f); toast("¡Listo! Anoten su primer gasto, o invita a tu familia desde Ajustes.");
 });
-$("form-unirse").addEventListener("submit", async e => { e.preventDefault(); await acceptInvite($("un-code").value, $("un-err")); });
-async function acceptInvite(code, errEl) {
-  const { data, error } = await sb.rpc("aceptar_invitacion", { p_code: String(code || "").trim().toUpperCase() });
-  if (error) { if (errEl) { errEl.textContent = error.message; errEl.hidden = false; } else toast(error.message); return false; }
-  const { data: f } = await sb.from("families").select("*").eq("id", data).single();
-  history.replaceState(null, "", location.pathname);
-  await openFamily(f); toast(`Ya estás en ${f.nombre}.`); return true;
+$("form-unirse").addEventListener("submit", async e => { e.preventDefault(); await showJoin($("un-code").value, $("un-err")); });
+
+let joinCode = null, joinPick = null;
+async function showJoin(code, errEl, misFams) {
+  code = String(code || "").trim().toUpperCase();
+  const { data, error } = await sb.rpc("ver_invitacion", { p_code: code });
+  const row = data && data[0];
+  const motivo = error ? error.message : row && row.motivo;
+  if (motivo || !row) {
+    history.replaceState(null, "", location.pathname);
+    if (errEl) { errEl.textContent = motivo || "No se pudo leer la invitación."; errEl.hidden = false; return false; }
+    toast(motivo || "No se pudo leer la invitación."); return false;
+  }
+  const ya = (misFams || []).find(f => f.id === row.familia_id);
+  if (ya) { history.replaceState(null, "", location.pathname); await openFamily(ya); toast(`Ya eres parte de ${ya.nombre}.`); return true; }
+  joinCode = code; joinPick = null;
+  $("jn-title").textContent = `Te invitaron a ${row.familia}`;
+  const ps = row.personas || [];
+  $("jn-personas").innerHTML = ps.map(p => `<button type="button" class="chip" data-pick="${p.id}" aria-pressed="false"><i class="dot" style="background:${esc(p.color)}"></i>Soy ${esc(p.nombre)}</button>`).join("") + `<button type="button" class="chip" data-pick="otro" aria-pressed="false">Soy otra persona</button>`;
+  $("jn-otro-wrap").hidden = true; $("jn-err").hidden = true; $("jn-go").disabled = true;
+  show("scr-join"); return true;
 }
+$("jn-personas").addEventListener("click", e => {
+  const b = e.target.closest("[data-pick]"); if (!b) return;
+  joinPick = b.dataset.pick;
+  $("jn-personas").querySelectorAll("[data-pick]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("jn-otro-wrap").hidden = joinPick !== "otro";
+  if (joinPick === "otro") { const n = user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name); if (n && !$("jn-otro").value) $("jn-otro").value = n.split(" ")[0]; $("jn-otro").focus(); }
+  $("jn-go").disabled = false;
+});
+$("jn-go").addEventListener("click", async () => {
+  const err = $("jn-err"); err.hidden = true;
+  const otro = joinPick === "otro" ? $("jn-otro").value.trim().slice(0, 30) : "";
+  if (joinPick === "otro" && !otro) { err.textContent = "Escribe tu nombre."; err.hidden = false; return; }
+  $("jn-go").disabled = true;
+  const { data: fid, error } = await sb.rpc("aceptar_invitacion", { p_code: joinCode, p_persona: joinPick && joinPick !== "otro" ? joinPick : null });
+  if (error) { $("jn-go").disabled = false; err.textContent = error.message; err.hidden = false; return; }
+  if (otro) {
+    const { count } = await sb.from("personas").select("id", { count: "exact", head: true }).eq("family_id", fid);
+    const { data: np } = await sb.from("personas").insert({ family_id: fid, nombre: otro, color: COLORES[(count || 0) % COLORES.length], orden: count || 0 }).select().single();
+    if (np) await sb.rpc("soy", { fid, p_persona: np.id });
+  }
+  localStorage.setItem("cuadre.soy." + fid, "1");
+  history.replaceState(null, "", location.pathname);
+  const { data: f } = await sb.from("families").select("*").eq("id", fid).single();
+  await openFamily(f); toast(`¡Bienvenido a ${f.nombre}! Lo que anoten aparece al instante para todos.`);
+});
+$("jn-cancel").addEventListener("click", () => { history.replaceState(null, "", location.pathname); joinCode = null; route(); });
 
 /* ---------- arranque ---------- */
 async function route() {
@@ -669,10 +793,11 @@ async function route() {
   if (!user) { show("scr-login"); return; }
   const inv = new URLSearchParams(location.search).get("inv") || localStorage.getItem("cuadre.inv");
   localStorage.removeItem("cuadre.inv");
-  if (inv && await acceptInvite(inv)) return;
   const { data: ms, error } = await sb.from("members").select("family_id, rol, families(*)").eq("user_id", user.id);
   if (error) { $("login-err").textContent = "No se pudo cargar: " + error.message; $("login-err").hidden = false; show("scr-login"); return; }
   const fams = (ms || []).map(m => m.families).filter(Boolean);
+  // Abrió un enlace de invitación: si ya es de esa familia entra directo; si no, ve a quién se une
+  if (inv && await showJoin(inv, null, fams)) return;
   if (!fams.length) { initOnboard(); show("scr-onboard"); return; }
   const saved = localStorage.getItem("cuadre.fam");
   await openFamily(fams.find(f => f.id === saved) || fams[0]);

@@ -11,7 +11,7 @@ Las cuentas de la casa, cuadradas. App web (instalable en el celular) para que u
 
 ### 1. Supabase
 1. Crea una cuenta en supabase.com y un proyecto nuevo (región *South America (São Paulo)*). Guarda la contraseña de la base de datos.
-2. En **SQL Editor → New query**, pega todo `supabase/schema.sql` y ejecuta (*Run*).
+2. En **SQL Editor → New query**, pega todo `supabase/schema.sql` y ejecuta (*Run*). Luego, en otra query, pega `supabase/002_familia_compartida.sql` y ejecuta.
 3. En **Project Settings → API** copia la **Project URL** y la **anon public key** y pégalas en `js/config.js`.
 4. Edita también en `js/config.js` el precio, las instrucciones de pago y tu número de WhatsApp.
 
@@ -42,6 +42,12 @@ Ya puedes abrir `https://cuadre.pe/admin.html` para ver familias y activar días
 
 ### 5. Migrar tus datos actuales
 En la app: **Ajustes → Restaurar respaldo JSON** → elige `migracion/respaldo-moises.json`. Crea las personas que falten y carga los 113 movimientos sin duplicar.
+
+## Familias compartidas
+- **Invitar:** Ajustes → *Invitar a la familia*. Un mismo enlace sirve para hasta 10 personas durante 14 días; *Anular este enlace y crear otro* deja sin efecto el anterior.
+- **Unirse:** quien abre el enlace entra con su Google, ve el nombre de la familia y elige quién es ("Soy Briggit" o "Soy otra persona"). Si ya era miembro, entra directo.
+- **Tiempo real:** todos ven y editan lo mismo al instante; aparece "Briggit anotó: Taxi −S/ 15", cada movimiento dice *por quién* y arriba se ve quién está en línea.
+- **Miembros:** quien creó la familia puede quitar a alguien; los demás pueden salirse. Los movimientos se quedan.
 
 ## Cómo funciona el cobro
 - Cada familia nueva tiene **14 días gratis** (`plan_hasta` = hoy + 14).

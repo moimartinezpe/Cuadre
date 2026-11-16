@@ -246,6 +246,11 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
 .plist li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
 .plist .nm{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plist .sub{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.online{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:12.5px;font-weight:700;color:var(--in)}
+.online::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--in);box-shadow:0 0 0 3px color-mix(in srgb,var(--in) 22%,transparent)}
+.who{color:var(--muted);font-weight:600}
+.pills .chip{height:44px;padding:0 16px;font-size:15px}
+.plist .tagrol{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .swatches{display:flex;flex-wrap:wrap;gap:8px}
 .swatch{width:32px;height:32px;border-radius:50%;border:3px solid transparent}
 .swatch[aria-pressed="true"]{border-color:var(--ink)}
@@ -291,12 +296,27 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
   <button type="button" class="link-btn" id="ob-logout">Salir de esta cuenta</button>
 </div>
 
+<!-- Unirse con un enlace -->
+<div class="screen" id="scr-join" hidden>
+  <div class="logo" style="font-size:40px"><svg class="brand-mark" style="width:38px;height:38px" viewBox="0 0 120 120" aria-hidden="true"><path d="M16 0 H104 A16 16 0 0 1 120 16 V26 H26 V120 H16 A16 16 0 0 1 0 104 V16 A16 16 0 0 1 16 0 Z" fill="var(--ink)"></path><path d="M120 32 V104 A16 16 0 0 1 104 120 H32 V94 H94 V32 Z" fill="var(--in)"></path><circle cx="60" cy="60" r="13" fill="var(--gold)"></circle></svg>cuadre</div>
+  <div class="card">
+    <h2 id="jn-title">Te invitaron a una familia</h2>
+    <p>Van a ver y anotar las mismas cuentas, al instante. Elige quién eres para que todos sepan quién anotó cada cosa.</p>
+    <div class="pills" id="jn-personas" role="group" aria-label="Quién eres"></div>
+    <label class="field" id="jn-otro-wrap" hidden><span>Tu nombre</span><input id="jn-otro" maxlength="30" autocomplete="given-name" placeholder="Ej: Zhamira"></label>
+    <p class="err-line" id="jn-err" hidden></p>
+    <button type="button" class="btn primary wide" id="jn-go" disabled>Unirme</button>
+    <button type="button" class="link-btn" id="jn-cancel" style="justify-self:center">No es para mí</button>
+  </div>
+</div>
+
 <!-- La app -->
 <div class="app" id="scr-app" hidden>
   <header class="top">
     <div>
       <h1><svg class="brand-mark" viewBox="0 0 120 120" aria-hidden="true"><path d="M16 0 H104 A16 16 0 0 1 120 16 V26 H26 V120 H16 A16 16 0 0 1 0 104 V16 A16 16 0 0 1 16 0 Z" fill="var(--ink)"></path><path d="M120 32 V104 A16 16 0 0 1 104 120 H32 V94 H94 V32 Z" fill="var(--in)"></path><circle cx="60" cy="60" r="13" fill="var(--gold)"></circle></svg>cuadre</h1>
       <p class="family" id="family-line"></p>
+      <p class="online" id="online" hidden></p>
     </div>
     <div class="top-actions">
       <button type="button" class="btn ghost" id="btn-import">Importar chat</button>
@@ -410,9 +430,16 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <button type="button" class="btn ghost" id="set-add-persona">+ Agregar persona</button>
 
     <h3>Quiénes anotan</h3>
+    <p class="meta">Todos ven y editan lo mismo, al instante.</p>
     <ul class="plist" id="set-miembros"></ul>
-    <button type="button" class="btn primary" id="set-invitar">Invitar a mi pareja</button>
-    <div class="note" id="inv-box" hidden><strong>Enlace de invitación</strong><p>Mándalo por WhatsApp. Sirve una sola vez y vence en 7 días.</p><p><code id="inv-code"></code></p><div class="cur-row"><button type="button" class="btn ghost" id="inv-copy">Copiar enlace</button><a class="btn ghost" id="inv-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a></div></div>
+    <div class="field"><span>Yo soy</span><div class="seg wrap" id="set-soy" role="group" aria-label="Yo soy"></div><small>Así los demás ven «por Moisés» en lo que anotas.</small></div>
+    <div class="note" id="inv-box">
+      <strong>Invitar a la familia</strong>
+      <p>Un mismo enlace sirve para hasta 10 personas durante 14 días. Cada una entra con su Google y elige quién es.</p>
+      <p><code id="inv-code">…</code> <span class="meta" id="inv-meta"></span></p>
+      <div class="cur-row"><a class="btn primary" id="inv-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a><button type="button" class="btn ghost" id="inv-copy">Copiar enlace</button></div>
+      <button type="button" class="link-btn" id="inv-new" style="justify-self:start">Anular este enlace y crear otro</button>
+    </div>
 
     <h3>Dinero</h3>
     <div class="field"><span>Moneda</span><div class="cur-row"><input id="set-moneda" maxlength="5" aria-label="Símbolo de moneda" autocomplete="off"><button type="button" class="chip" data-m="S/">S/</button><button type="button" class="chip" data-m="$">$</button><button type="button" class="chip" data-m="€">€</button><button type="button" class="chip" data-m="Bs">Bs</button><button type="button" class="chip" data-m="Q">Q</button><button type="button" class="chip" data-m="₡">₡</button></div></div>
@@ -427,6 +454,15 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <p class="meta" id="set-cuenta"></p>
     <div class="cur-row"><button type="button" class="btn ghost" id="set-logout">Cerrar sesión</button><a class="btn ghost" id="set-admin" href="./admin.html" hidden>Panel de administración</a></div>
     <p class="meta"><a href="./privacidad.html">Privacidad</a> · <a href="./terminos.html">Términos</a></p>
+  </div>
+</div>
+
+<!-- ¿Quién eres? (una vez, al entrar) -->
+<div class="sheet-wrap" id="soy-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="soy-title">
+    <div class="sheet-head"><h2 id="soy-title" tabindex="-1">¿Quién eres en esta familia?</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="meta">Así los demás ven quién anotó cada cosa. Puedes cambiarlo en Ajustes.</p>
+    <div class="seg wrap" id="soy-opts" role="group" aria-label="Yo soy"></div>
   </div>
 </div>
 
