@@ -5,33 +5,77 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cuadre · Administración</title>
 <meta name="robots" content="noindex">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
 <style>
-:root{--bg:#EEF2EC;--surface:#fff;--line:#D1D9CD;--ink:#14201A;--muted:#56655C;--in:#1A8150;--neg:#BB3A26;--gold:#E0A21B}
-@media (prefers-color-scheme:dark){:root{--bg:#0E1310;--surface:#161D19;--line:#2A352E;--ink:#E5EDE6;--muted:#98A79E;--in:#4CC48B;--neg:#F07D64;--gold:#F0B44A}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Manrope,"Segoe UI",system-ui,sans-serif;padding:20px max(16px,env(safe-area-inset-left))}
-.wrap{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+:root{--bg:#EEF2EC;--surface:#fff;--line:#D1D9CD;--ink:#14201A;--muted:#56655C;--in:#1A8150;--neg:#BB3A26;--gold:#B07A0F;--loan:#6A44B3}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1310;--surface:#161D19;--line:#2A352E;--ink:#E5EDE6;--muted:#98A79E;--in:#4CC48B;--neg:#F07D64;--gold:#F0B44A;--loan:#B79FF3}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Manrope,"Segoe UI",system-ui,sans-serif;padding:20px max(16px,env(safe-area-inset-left))}
+[hidden]{display:none!important}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:16px}
 h1{margin:0;font-size:26px;letter-spacing:-.02em}
+h2{margin:0;font-size:17px}
 a{color:inherit}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px}
-.fam{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:10px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fam{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
 .fam b{font-size:17px}.fam small{display:block;color:var(--muted)}
-.st{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:9px;background:var(--line)}
-.st.ok{background:color-mix(in srgb,var(--in) 18%,transparent);color:var(--in)}.st.bad{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.st{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:9px;background:var(--line);vertical-align:2px}
+.st.ok{background:color-mix(in srgb,var(--in) 18%,transparent);color:var(--in)}
+.st.bad{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.st.warn{background:color-mix(in srgb,var(--gold) 20%,transparent);color:var(--gold)}
+.st.trial{background:color-mix(in srgb,var(--loan) 18%,transparent);color:var(--loan)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 button,input,select{font:inherit;color:inherit}
-input,select{height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);padding:0 12px}
-input.n{width:90px}
-.btn{height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer}
+input,select{height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);padding:0 12px;min-width:0}
+input.n{width:96px}
+.btn{height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer;white-space:nowrap}
 .btn.p{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.d{color:var(--neg)}
+.btn:disabled{opacity:.5}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .muted{color:var(--muted)}
+.msg{font-size:13px;font-weight:700}
+.msg.ok{color:var(--in)}.msg.err{color:var(--neg)}
+details summary{cursor:pointer;font-weight:700;font-size:14px}
+.hist{font-size:13px;color:var(--muted);margin:6px 0 0;padding-left:18px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Cuadre · Administración</h1>
   <p class="muted" id="who">Cargando…</p>
-  <p class="muted" style="font-size:13px">Aquí ves cada familia, quiénes la usan, cuánto han pagado y hasta cuándo tienen acceso. Por privacidad no ves sus gastos ni ingresos: eso solo lo ven los miembros de cada familia.</p>
-  <div id="list"></div>
+
+  <div class="kpis" id="kpis" hidden></div>
+
+  <div class="card" id="cfg" hidden>
+    <h2>Prueba gratis para familias nuevas</h2>
+    <p class="muted" style="margin:0;font-size:13px">Cuántos días pueden anotar gratis al crear su familia. Con 0, entran y ven la app, pero no pueden anotar hasta que tú las actives.</p>
+    <form class="row" id="cfg-form"><select id="cfg-dias"><option value="0">Sin prueba (activo yo)</option><option value="3">3 días</option><option value="7">7 días</option><option value="14">14 días</option><option value="30">30 días</option></select><button class="btn p" type="submit">Guardar</button><span class="msg" id="cfg-msg"></span></form>
+  </div>
+
+  <div class="card" id="tools" hidden>
+    <div class="row" style="justify-content:space-between">
+      <div class="chips" id="filtros" role="group" aria-label="Filtrar familias">
+        <button type="button" class="chip" data-f="todas" aria-pressed="true">Todas</button>
+        <button type="button" class="chip" data-f="prueba" aria-pressed="false">En prueba</button>
+        <button type="button" class="chip" data-f="pagando" aria-pressed="false">Pagando</button>
+        <button type="button" class="chip" data-f="vence" aria-pressed="false">Vencen en 5 días</button>
+        <button type="button" class="chip" data-f="vencidas" aria-pressed="false">Vencidas</button>
+        <button type="button" class="chip" data-f="pendientes" aria-pressed="false">Sin activar</button>
+      </div>
+      <button type="button" class="btn" id="copiar-correos">Copiar correos de esta lista</button>
+    </div>
+    <input id="buscar" type="search" placeholder="Buscar por familia, nombre o correo">
+  </div>
+
+  <div id="list" style="display:grid;gap:12px"></div>
+  <p class="muted" style="font-size:13px">Por privacidad no ves los gastos ni ingresos de nadie: solo lo que necesitas para cobrar y dar soporte.</p>
   <p><a href="./">← Volver a la app</a></p>
 </div>
 <script type="module" src="./js/admin.js"></script>

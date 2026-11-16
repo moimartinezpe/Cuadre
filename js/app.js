@@ -149,7 +149,8 @@ function renderBanner() {
     if (left <= 5) { $("banner-text").textContent = `Tu plan vence ${left === 0 ? "hoy" : `en ${left} ${left === 1 ? "día" : "días"}`}. Renueva para seguir anotando.`; b.hidden = false; }
     else b.hidden = true;
   } else {
-    $("banner-text").textContent = fam.plan_hasta ? `Tu plan venció el ${fechaLarga(fam.plan_hasta)}. Pueden ver todo, pero no anotar.` : "Esta familia no tiene plan activo.";
+    $("banner-text").textContent = fam.plan_hasta ? `Tu plan venció el ${fechaLarga(fam.plan_hasta)}. Pueden ver todo, pero no anotar.` : `Tu familia ya está creada. Para empezar a anotar, activa tu plan: ${PLAN.precioMes} al mes o ${PLAN.precioAnio} al año.`;
+    $("banner-btn").textContent = fam.plan_hasta ? "Ver cómo renovar" : "Ver cómo activar";
     b.hidden = false;
   }
 }
@@ -283,7 +284,7 @@ function updateComposer() {
   $("send").classList.toggle("has-amt", !!c.monto);
   $("send").disabled = !(writable() && listo(c));
   inText.disabled = !writable();
-  inText.placeholder = writable() ? "Ej: mercado 120 familia" : "Renueva el plan para seguir anotando";
+  inText.placeholder = writable() ? "Ej: mercado 120 familia" : fam.plan_hasta ? "Renueva el plan para seguir anotando" : "Activa tu plan para empezar a anotar";
   if (trayKind) fillTray();
 }
 function hint(msg, isErr) { const h = $("hint"); h.textContent = msg; h.classList.toggle("err", !!isErr); h.hidden = !msg; }
@@ -462,7 +463,8 @@ function syncSettingsForm() {
   $("set-admin").hidden = !isAdmin;
   const pn = $("plan-note");
   if (activo()) { $("plan-title").textContent = "Plan activo"; $("plan-text").textContent = `Pueden anotar hasta el ${fechaLarga(fam.plan_hasta)}. Después, ${PLAN.precioMes} al mes o ${PLAN.precioAnio} al año.`; }
-  else { $("plan-title").textContent = "Plan vencido"; $("plan-text").textContent = `Venció el ${fam.plan_hasta ? fechaLarga(fam.plan_hasta) : "—"}. Pueden ver todo, pero no anotar hasta renovar: ${PLAN.precioMes} al mes o ${PLAN.precioAnio} al año.`; }
+  else if (!fam.plan_hasta) { $("plan-title").textContent = "Plan por activar"; $("plan-text").textContent = `Para empezar a anotar, activa tu plan: ${PLAN.precioMes} al mes o ${PLAN.precioAnio} al año.`; }
+  else { $("plan-title").textContent = "Plan vencido"; $("plan-text").textContent = `Venció el ${fechaLarga(fam.plan_hasta)}. Pueden ver todo, pero no anotar hasta renovar: ${PLAN.precioMes} al mes o ${PLAN.precioAnio} al año.`; }
   $("plan-pay").hidden = false; $("plan-instr").textContent = PLAN.instrucciones;
   $("plan-wa").href = `https://wa.me/${PLAN.whatsapp}?text=${encodeURIComponent(`Hola, pagué Cuadre para la familia "${fam.nombre}". Mi correo es ${user.email}.`)}`;
   pn.hidden = false;
