@@ -50,7 +50,7 @@ En la app: **Ajustes → Restaurar respaldo JSON** → elige `migracion/respaldo
 - **Miembros:** quien creó la familia puede quitar a alguien; los demás pueden salirse. Los movimientos se quedan.
 
 ## Cómo funciona el cobro
-- Cada familia nueva tiene **14 días gratis** (`plan_hasta` = hoy + 14).
+- Los días de prueba de cada familia nueva se eligen en el panel de administración (0 = sin prueba).
 - Vencido el plan, la familia **ve todo pero no puede anotar**: lo bloquea la base de datos (RLS), no solo la pantalla.
 - El cliente paga por Yape/Plin y te avisa por WhatsApp (botón en Ajustes). Tú entras a `admin.html` y activas +30 o +365 días.
 
