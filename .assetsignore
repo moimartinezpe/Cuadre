@@ -1,0 +1,9 @@
+# Nada de esto se publica en la web
+.git
+.gitignore
+.assetsignore
+wrangler.jsonc
+README.md
+supabase
+migracion
+node_modules
