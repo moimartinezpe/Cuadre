@@ -11,7 +11,7 @@ Las cuentas de la casa, cuadradas. App web (instalable en el celular) para que u
 
 ### 1. Supabase
 1. Crea una cuenta en supabase.com y un proyecto nuevo (región *South America (São Paulo)*). Guarda la contraseña de la base de datos.
-2. En **SQL Editor → New query**, pega todo `supabase/schema.sql` y ejecuta (*Run*). Luego, en otra query, pega `supabase/002_familia_compartida.sql` y ejecuta.
+2. En **SQL Editor → New query**, pega todo `supabase/schema.sql` y ejecuta (*Run*). Luego, en otra query, `supabase/002_familia_compartida.sql`, y después `supabase/003_seguridad.sql`, ejecutando cada uno.
 3. En **Project Settings → API** copia la **Project URL** y la **anon public key** y pégalas en `js/config.js`.
 4. Edita también en `js/config.js` el precio, las instrucciones de pago y tu número de WhatsApp.
 
