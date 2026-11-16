@@ -70,7 +70,12 @@ const inText = $("in-text"), inDate = $("in-date"), tray = $("tray");
 
 const activo = () => !!fam && !!fam.plan_hasta && fam.plan_hasta >= today();
 const writable = () => !!fam && activo();
-const personaDefault = () => familiaId || (personas[0] && personas[0].id);
+const prefKey = () => `cuadre.sinNombre.${fam ? fam.id : ""}.${user ? user.id : ""}`;
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
+const miPersona = () => { const m = miembros.find(x => x.user_id === (user && user.id)); return m && m.persona_id && P[m.persona_id] ? m.persona_id : null; };
+const sinNombreMio = () => lsGet(prefKey()) === "mio" && !!miPersona();
+const personaDefault = () => (sinNombreMio() ? miPersona() : null) || familiaId || (personas[0] && personas[0].id);
 
 function normRow(r) {
   const tipo = ["ingreso", "prestamo", "cobro"].includes(r.tipo) ? r.tipo : "gasto";
@@ -136,11 +141,25 @@ function renderAll() {
   const t = totals();
   renderHeader(); renderMonth(); renderBalance(t); renderLoans(); renderPeople(t); renderCats(t); renderList(); renderBanner();
 }
+function avatarDe(m) {
+  const per = m.persona_id && P[m.persona_id];
+  const nombre = per ? per.nombre : (m.nombre || m.email || "?");
+  const color = per ? per.color : "#8A968F";
+  return { nombre, color, ini: (nombre.trim()[0] || "?").toUpperCase(), on: m.user_id !== user.id && online.has(m.user_id) };
+}
+const avHTML = (a, i) => `<span class="av${a.on ? " on" : ""}" style="background:${esc(a.color)}${i != null ? `;z-index:${9 - i}` : ""}" title="${esc(a.nombre)}${a.on ? " · en línea" : ""}">${esc(a.ini)}</span>`;
+const soloEnCasa = () => miembros.length <= 1;
 function renderHeader() {
-  $("family-line").innerHTML = `<span style="color:var(--ink)">${esc(fam.nombre)}</span>` + personas.map(p => `<span><i class="dot" style="background:${p.color}"></i>${esc(p.nombre)}</span>`).join("");
-  const otros = [...online].filter(u => u !== user.id).map(nombreDe).filter(Boolean);
-  $("online").textContent = otros.length ? `En línea ahora: ${otros.join(", ")}` : "";
-  $("online").hidden = !otros.length;
+  $("family-line").textContent = fam.nombre;
+  const ms = miembros.length ? miembros : (user ? [{ user_id: user.id, nombre: (user.user_metadata && user.user_metadata.full_name) || user.email }] : []);
+  // los que están en línea primero, luego tú, máximo 4 círculos
+  const orden = ms.slice().sort((a, b) => (online.has(b.user_id) && b.user_id !== user.id) - (online.has(a.user_id) && a.user_id !== user.id));
+  const vis = orden.slice(0, orden.length > 4 ? 3 : 4);
+  $("avatars").innerHTML = vis.map((m, i) => avHTML(avatarDe(m), i)).join("") + (orden.length > vis.length ? `<span class="av more">+${orden.length - vis.length}</span>` : "");
+  const enLinea = ms.filter(m => m.user_id !== user.id && online.has(m.user_id)).map(m => avatarDe(m).nombre);
+  $("btn-members").setAttribute("aria-label", `${ms.length} ${ms.length === 1 ? "persona anota" : "personas anotan"}${enLinea.length ? `; en línea: ${enLinea.join(", ")}` : ""}`);
+  $("btn-invite").classList.toggle("strong", soloEnCasa());
+  $("solo").hidden = !miembros.length || !soloEnCasa() || lsGet("cuadre.solo." + fam.id) === "no";
 }
 function renderBanner() {
   const b = $("banner");
@@ -255,19 +274,76 @@ function emptyHTML() {
   return `<div class="empty"><p class="empty-title">${esc(nombre.charAt(0).toUpperCase() + nombre.slice(1))} está en blanco</p>
     <p>Anoten en la barra de abajo, igual que en el chat: qué fue, cuánto y para quién. Con un + delante es un ingreso. Toca un ejemplo:</p>
     <div class="bubbles">${[`+3500 sueldo ${ej[0] || ""}`, "mercado 120 familia", `taxi 15 ${ej[1] || ej[0] || ""}`, "presté 200 a Rosa"].map(s => `<button type="button" class="bubble" data-ex="${esc(s.trim())}">${esc(s.trim())}</button>`).join("")}</div>
-    <p>¿Ya tienen gastos en WhatsApp? Usen <strong>Importar chat</strong>, arriba.</p></div>`;
+    <p>¿Ya tienen gastos anotados en WhatsApp? <button type="button" class="link-btn" data-import>Importa el chat</button></p></div>`;
 }
 
 /* ---------- composer ---------- */
-function current() {
-  const p = parse(inText.value, { tipo: ov.tipo, personas, loans: openLoans });
-  const categoria = ov.categoria && catsFor(p.tipo).some(c => c.id === ov.categoria) ? ov.categoria : p.categoria;
-  return { ...p, categoria, fecha: p.fecha || state.fecha, persona: ov.persona || p.persona || personaDefault(), personaSoft: !ov.persona && !p.persona, catSoft: !ov.categoria && !p.catFound };
+function build(text, conCat) {
+  const p = parse(text, { tipo: ov.tipo, personas, loans: openLoans });
+  const categoria = conCat && ov.categoria && catsFor(p.tipo).some(c => c.id === ov.categoria) ? ov.categoria : p.categoria;
+  return { ...p, categoria, fecha: p.fecha || state.fecha, persona: p.persona || ov.persona || personaDefault(), personaSoft: !ov.persona && !p.persona, catSoft: !(conCat && ov.categoria) && !p.catFound };
 }
+function current() {
+  const c = build(inText.value, true);
+  if (ov.persona) { c.persona = ov.persona; c.personaSoft = false; }
+  return c;
+}
+// Varios en un mensaje: «taxi 10, almuerzo 18, pan 5» (coma con espacio, punto y coma o salto de línea).
+// La coma pegada a números (1,250.50 o 12,50) no separa.
+function multi() {
+  const partes = inText.value.split(/\s*(?:;|\n|,(?=\s))\s*/).map(t => t.trim()).filter(Boolean);
+  if (partes.length < 2) return null;
+  const items = partes.map(t => build(t, false));
+  return items.every(c => c.monto) ? items : null;
+}
+const rowOf = c => ({ family_id: fam.id, tipo: c.tipo, monto: c.monto, persona_id: c.persona, categoria: c.categoria, nota: isLoan(c.tipo) ? c.nota : (c.nota || CAT[c.categoria].nombre), fecha: c.fecha, deudor: isLoan(c.tipo) ? c.deudor : "", prestamo_id: c.tipo === "cobro" ? c.prestamoId : null, created_by: user.id });
+// Lo que más anotan (últimos 60 días); si aún no hay nada, unos ejemplos comunes
+function frecuentes() {
+  const desde = isoOf(new Date(Date.now() - 60 * 864e5)), cuenta = new Map();
+  for (const d of all) {
+    if (d.tipo !== "gasto" || d.fecha < desde) continue;
+    const n = norm(d.nota || "").replace(/[^a-zñ ]/g, "").trim();
+    if (!n || n.length > 18 || n === "otros") continue;
+    cuenta.set(n, (cuenta.get(n) || 0) + 1);
+  }
+  const top = [...cuenta].sort((a, b) => b[1] - a[1]).map(([n]) => n).slice(0, 6);
+  for (const n of ["mercado", "almuerzo", "pasaje", "taxi", "luz", "internet"]) { if (top.length >= 6) break; if (!top.includes(n)) top.push(n); }
+  return top;
+}
+function renderSugs() {
+  const box = $("sugs"), on = writable() && !inText.value.trim() && !trayKind;
+  box.hidden = !on;
+  if (on) box.innerHTML = frecuentes().map(n => `<button type="button" class="sug" data-sug="${esc(n)}">${esc(n)}</button>`).join("");
+}
+$("sugs").addEventListener("click", e => { const b = e.target.closest("[data-sug]"); if (!b) return; inText.value = b.dataset.sug + " "; updateComposer(); inText.focus(); try { inText.setSelectionRange(inText.value.length, inText.value.length); } catch { /* */ } });
 const TIPO_LABEL = { gasto: "Gasto", ingreso: "Ingreso", prestamo: "Préstamo", cobro: "Devolución" };
 const listo = c => !!c.monto && (c.tipo !== "prestamo" || !!c.deudor);
 function updateComposer() {
   if (!fam) return;
+  renderSugs();
+  const ms = multi(), mbox = $("multi");
+  $("composer").querySelector(".chips").classList.toggle("multi-mode", !!ms);
+  mbox.hidden = !ms;
+  if (ms) {
+    if (trayKind === "categoria") closeTray();
+    const neto = ms.reduce((t, c) => t + (entra(c.tipo) ? c.monto : -c.monto), 0);
+    mbox.innerHTML = `<div class="mhead">${ms.length} movimientos</div>` + ms.map(c => {
+      const per = P[c.persona] || { nombre: "—" }, bad = !listo(c);
+      const sub = c.tipo === "prestamo" ? (c.deudor ? `préstamo a ${c.deudor}` : "¿a quién?") : c.tipo === "cobro" ? `devolución de ${c.deudor}` : CAT[c.categoria].nombre;
+      return `<div class="mrow${bad ? " bad" : ""}"><span class="t">${esc(c.nota || sub)}</span><span class="s">${esc(sub)} · ${esc(per.nombre)}</span><span class="a${entra(c.tipo) ? " in" : ""}">${esc(fmt(c.monto, entra(c.tipo) ? "+" : "-"))}</span></div>`;
+    }).join("");
+    const per0 = P[ov.persona || personaDefault()] || { color: "var(--muted)", nombre: "—" };
+    $("chip-persona-dot").style.background = per0.color; $("chip-persona-name").textContent = per0.nombre; $("chip-persona").classList.toggle("soft", !ov.persona);
+    $("date-label").textContent = shortDate(state.fecha); if (inDate.value !== state.fecha) inDate.value = state.fecha;
+    $("chip-date").classList.toggle("away", state.fecha !== today());
+    $("send-amt").textContent = fmt(Math.abs(neto), neto >= 0 ? "+" : "-");
+    $("send").classList.add("has-amt");
+    $("send").disabled = !(writable() && ms.every(listo));
+    $("send").setAttribute("aria-label", `Anotar ${ms.length} movimientos`);
+    if (trayKind) fillTray();
+    return;
+  }
+  $("send").setAttribute("aria-label", "Anotar");
   const c = current(), per = P[c.persona] || { color: "var(--muted)", nombre: "—" };
   const tipoChip = $("chip-tipo");
   tipoChip.textContent = TIPO_LABEL[c.tipo]; tipoChip.classList.toggle("in", entra(c.tipo)); tipoChip.classList.toggle("loan", c.tipo === "prestamo");
@@ -305,19 +381,34 @@ inText.addEventListener("input", () => { if (!inText.value.trim()) ov = {}; if (
 inText.addEventListener("keydown", e => {
   if (e.key === "Escape") closeTray();
   if (e.key === "Enter" && $("send").disabled && inText.value.trim()) {
-    e.preventDefault(); const c = current();
+    e.preventDefault(); const ms = multi();
+    if (ms) { hint(writable() ? "En un préstamo falta a quién. Por ejemplo: presté 200 a Rosa" : "Renueva el plan para seguir anotando.", true); return; }
+    const c = current();
     if (!writable()) hint("Renueva el plan para seguir anotando.", true);
     else if (!c.monto) hint("Falta el monto. Por ejemplo: taxi 15", true);
     else if (c.tipo === "prestamo" && !c.deudor) hint("¿A quién le prestaron? Por ejemplo: presté 200 a Rosa", true);
   }
 });
+async function anotarVarios(ms) {
+  if (!writable() || !ms.every(listo)) return;
+  // la persona elegida en el chip aplica a los que no dicen para quién
+  const rows = ms.map(rowOf);
+  const prevText = inText.value, prevOv = ov;
+  inText.value = ""; ov = {}; hint(""); updateComposer();
+  const { data, error } = await sb.from("movimientos").insert(rows).select();
+  if (error) { inText.value = prevText; ov = prevOv; updateComposer(); return writeError(error); }
+  (data || []).forEach(upsertLocal); renderAll();
+  const ids = (data || []).map(d => d.id), neto = ms.reduce((t, c) => t + (entra(c.tipo) ? c.monto : -c.monto), 0);
+  toast(`Anotados ${ids.length} movimientos (${fmt(Math.abs(neto), neto >= 0 ? "+" : "-")})`, { label: "Deshacer", run: async () => { const { error } = await sb.from("movimientos").delete().in("id", ids); if (error) return writeError(error); ids.forEach(removeLocal); renderAll(); toast(`Se borraron ${ids.length} movimientos.`); } });
+}
 $("composer").addEventListener("submit", async e => {
   e.preventDefault(); closeTray();
+  const ms = multi(); if (ms) return anotarVarios(ms);
   const c = current();
   if (!c.monto) { if (inText.value.trim()) hint("Falta el monto. Por ejemplo: taxi 15", true); return; }
   if (c.tipo === "prestamo" && !c.deudor) { hint("¿A quién le prestaron? Por ejemplo: presté 200 a Rosa", true); return; }
   if (!writable()) return;
-  const row = { family_id: fam.id, tipo: c.tipo, monto: c.monto, persona_id: c.persona, categoria: c.categoria, nota: isLoan(c.tipo) ? c.nota : (c.nota || CAT[c.categoria].nombre), fecha: c.fecha, deudor: isLoan(c.tipo) ? c.deudor : "", prestamo_id: c.tipo === "cobro" ? c.prestamoId : null, created_by: user.id };
+  const row = rowOf(c);
   const prevText = inText.value, prevOv = ov;
   inText.value = ""; ov = {}; hint(""); updateComposer();
   const { data, error } = await sb.from("movimientos").insert(row).select().single();
@@ -349,6 +440,7 @@ $("cats").addEventListener("click", e => { const b = e.target.closest("button[da
 $("filter-chip").addEventListener("click", () => { state.filter = null; renderAll(); });
 $("search").addEventListener("input", e => { state.search = e.target.value.trim(); renderList(); });
 $("list").addEventListener("click", e => {
+  if (e.target.closest("[data-import]")) { renderImport(); openSheet("imp-wrap"); return; }
   const ex = e.target.closest("[data-ex]"); if (ex) { inText.value = ex.dataset.ex; ov = {}; updateComposer(); inText.focus(); return; }
   const m = e.target.closest(".mov[data-id]"); if (m) openEdit(m.dataset.id);
 });
@@ -458,7 +550,9 @@ function syncSettingsForm() {
   $("set-personas").innerHTML = personas.map(p => `<li><i class="dot" style="background:${p.color};width:12px;height:12px"></i><span class="nm">${esc(p.nombre)}<span class="sub">${p.es_familia ? "Gastos en conjunto" : (p.apodos && p.apodos.length ? "También: " + esc(p.apodos.join(", ")) : "Sin apodos")}</span></span><button type="button" class="btn ghost small" data-per="${p.id}">Editar</button></li>`).join("");
   renderMiembros();
   renderSoy($("set-soy"));
-  cargarInvitacion();
+  segSet($("set-sinnombre"), sinNombreMio() ? "mio" : "familia");
+  $("set-sinnombre").querySelector('[data-v="mio"]').disabled = !miPersona();
+  $("sinnombre-note").textContent = miPersona() ? "Solo cambia en este celular. Igual puedes escribir el nombre: «taxi 15 bri»." : "Para elegir «Mío», primero dinos quién eres aquí arriba.";
   $("set-cuenta").textContent = `Entraste como ${user.email}. Familia: ${fam.nombre}.`;
   $("set-admin").hidden = !isAdmin;
   const pn = $("plan-note");
@@ -541,6 +635,11 @@ async function elegirSoy(pid) {
   await loadMiembros(); renderAll(); syncSettingsForm();
   toast(`Listo, eres ${P[pid].nombre}.`);
 }
+$("set-sinnombre").addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]"); if (!b || b.disabled) return;
+  lsSet(prefKey(), b.dataset.v === "mio" ? "mio" : null); segSet($("set-sinnombre"), b.dataset.v); updateComposer();
+  toast(b.dataset.v === "mio" ? `Lo que anotes sin nombre irá para ${P[miPersona()].nombre}.` : "Lo que anotes sin nombre irá para la familia.");
+});
 $("set-soy").addEventListener("click", e => { const b = e.target.closest("[data-soy]"); if (b) elegirSoy(b.dataset.soy); });
 $("soy-opts").addEventListener("click", async e => { const b = e.target.closest("[data-soy]"); if (!b) return; await elegirSoy(b.dataset.soy); closeSheet("soy-wrap"); });
 $("set-miembros").addEventListener("click", async e => {
@@ -555,6 +654,30 @@ $("set-miembros").addEventListener("click", async e => {
 });
 
 /* invitar */
+function renderInvPeople() {
+  const ms = miembros.length ? miembros : [{ user_id: user.id }];
+  $("inv-people").innerHTML = ms.map(m => {
+    const a = avatarDe(m), yoMismo = m.user_id === user.id;
+    return `<li>${avHTML(a)}<span>${esc(a.nombre)}${yoMismo ? " (tú)" : ""}<span class="sub">${yoMismo ? "Ya anota" : a.on ? "En línea ahora" : "Ya anota"}</span></span></li>`;
+  }).join("") + (ms.length <= 1 ? `<li><span class="ghost-av" aria-hidden="true">+</span><span>Tu pareja, tus hijos…<span class="sub">Les llega un enlace y entran con su Google</span></span></li>` : "");
+}
+function openInvite(nuevo) {
+  $("inv-title").textContent = nuevo ? "¿Quién más anota en casa?" : "Invita a tu familia";
+  $("inv-sub").textContent = nuevo ? "Mándales el enlace por WhatsApp. Cada uno anota desde su celular y todos ven lo mismo al instante." : "Cada uno entra con su cuenta de Google y anota desde su celular. Todo se ve al instante.";
+  $("inv-later").hidden = !nuevo;
+  $("inv-share").hidden = !navigator.share;
+  renderInvPeople();
+  if (!$("set-wrap").hidden) $("set-wrap").hidden = true;
+  openSheet("inv-wrap");
+  cargarInvitacion();
+}
+$("btn-invite").addEventListener("click", () => openInvite(false));
+$("btn-members").addEventListener("click", () => openInvite(false));
+$("solo-invite").addEventListener("click", () => openInvite(false));
+$("set-invite").addEventListener("click", () => openInvite(false));
+$("solo-close").addEventListener("click", () => { lsSet("cuadre.solo." + fam.id, "no"); renderHeader(); toast("Listo. Puedes invitar cuando quieras con el botón Invitar, arriba."); });
+$("inv-later").addEventListener("click", () => closeSheet("inv-wrap"));
+$("inv-share").addEventListener("click", async () => { const link = $("inv-box").dataset.link; if (!link) return; try { await navigator.share({ title: "Cuadre", text: `Te invito a llevar las cuentas de la casa conmigo en Cuadre (${fam.nombre}).`, url: link }); } catch { /* canceló */ } });
 async function cargarInvitacion(nueva) {
   const { data, error } = await sb.rpc(nueva ? "nueva_invitacion" : "crear_invitacion", { fid: fam.id });
   if (error) {
@@ -564,12 +687,12 @@ async function cargarInvitacion(nueva) {
   }
   const link = `${location.origin}${location.pathname}?inv=${data}`;
   $("inv-code").textContent = data; $("inv-box").dataset.link = link;
-  $("inv-meta").textContent = "o comparte el código";
+  $("inv-meta").textContent = "· hasta 10 personas, 14 días";
   $("inv-wa").href = `https://wa.me/?text=${encodeURIComponent(`Te invito a llevar las cuentas de la casa conmigo en Cuadre (${fam.nombre}). Entra con tu Google aquí: ${link}`)}`;
   if (nueva) toast("Listo: el enlace anterior ya no sirve.");
 }
 $("inv-new").addEventListener("click", () => cargarInvitacion(true));
-$("inv-copy").addEventListener("click", async () => { const link = $("inv-box").dataset.link; if (!link) return toast("El enlace todavía no está listo. Cierra y vuelve a abrir Ajustes."); try { await navigator.clipboard.writeText(link); toast("Enlace copiado."); } catch { prompt("Copia este enlace:", link); } });
+$("inv-copy").addEventListener("click", async () => { const link = $("inv-box").dataset.link; if (!link) return toast("El enlace todavía no está listo. Intenta otra vez en un segundo."); try { await navigator.clipboard.writeText(link); toast("Enlace copiado."); } catch { prompt("Copia este enlace:", link); } });
 
 /* respaldo: CSV y restaurar JSON */
 function toCSV() {
@@ -689,13 +812,14 @@ function subscribe() {
       const antes = new Set(miembros.map(m => m.user_id));
       await loadMiembros(); renderAll();
       if (!$("set-wrap").hidden) syncSettingsForm();
+      if (!$("inv-wrap").hidden) renderInvPeople();
       const nuevo = miembros.find(m => !antes.has(m.user_id));
       if (payload.eventType === "INSERT" && nuevo && nuevo.user_id !== user.id) toast(`${nombreDe(nuevo.user_id)} se unió a ${fam.nombre}.`);
       if (!miembros.some(m => m.user_id === user.id)) { toast("Ya no eres parte de esta familia."); setTimeout(() => location.reload(), 1500); }
     })
     .on("presence", { event: "sync" }, () => {
       online = new Set(Object.values(channel.presenceState()).flat().map(p => p.uid));
-      renderHeader(); if (!$("set-wrap").hidden) renderMiembros();
+      renderHeader(); if (!$("set-wrap").hidden) renderMiembros(); if (!$("inv-wrap").hidden) renderInvPeople();
     })
     .on("postgres_changes", { event: "*", schema: "public", table: "personas", filter: `family_id=eq.${fam.id}` }, async () => { await loadPersonas(); renderAll(); updateComposer(); })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "families", filter: `id=eq.${fam.id}` }, payload => { fam = { ...fam, ...payload.new }; renderAll(); updateComposer(); })
@@ -741,7 +865,7 @@ $("form-crear").addEventListener("submit", async e => {
   if (primera) await sb.rpc("soy", { fid: data, p_persona: primera.id });
   localStorage.setItem("cuadre.soy." + data, "1");
   const { data: f } = await sb.from("families").select("*").eq("id", data).single();
-  await openFamily(f); toast("¡Listo! Anoten su primer gasto, o invita a tu familia desde Ajustes.");
+  await openFamily(f); openInvite(true);
 });
 $("form-unirse").addEventListener("submit", async e => { e.preventDefault(); await showJoin($("un-code").value, $("un-err")); });
 
