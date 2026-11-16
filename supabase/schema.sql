@@ -165,7 +165,7 @@ language plpgsql security definer set search_path = public as $$
 declare code text;
 begin
   if not public.is_member(fid) then raise exception 'No eres miembro de esta familia'; end if;
-  code := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 8));
+  code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   insert into public.invitaciones (code, family_id, created_by) values (code, fid, auth.uid());
   return code;
 end $$;

@@ -555,7 +555,11 @@ $("set-miembros").addEventListener("click", async e => {
 /* invitar */
 async function cargarInvitacion(nueva) {
   const { data, error } = await sb.rpc(nueva ? "nueva_invitacion" : "crear_invitacion", { fid: fam.id });
-  if (error) { $("inv-code").textContent = "—"; return writeError(error); }
+  if (error) {
+    delete $("inv-box").dataset.link; $("inv-code").textContent = "—"; $("inv-meta").textContent = "No se pudo crear el enlace";
+    $("inv-wa").removeAttribute("href");
+    return toast("No se pudo crear el enlace de invitación: " + error.message);
+  }
   const link = `${location.origin}${location.pathname}?inv=${data}`;
   $("inv-code").textContent = data; $("inv-box").dataset.link = link;
   $("inv-meta").textContent = "o comparte el código";
@@ -563,7 +567,7 @@ async function cargarInvitacion(nueva) {
   if (nueva) toast("Listo: el enlace anterior ya no sirve.");
 }
 $("inv-new").addEventListener("click", () => cargarInvitacion(true));
-$("inv-copy").addEventListener("click", async () => { const link = $("inv-box").dataset.link; try { await navigator.clipboard.writeText(link); toast("Enlace copiado."); } catch { prompt("Copia este enlace:", link); } });
+$("inv-copy").addEventListener("click", async () => { const link = $("inv-box").dataset.link; if (!link) return toast("El enlace todavía no está listo. Cierra y vuelve a abrir Ajustes."); try { await navigator.clipboard.writeText(link); toast("Enlace copiado."); } catch { prompt("Copia este enlace:", link); } });
 
 /* respaldo: CSV y restaurar JSON */
 function toCSV() {

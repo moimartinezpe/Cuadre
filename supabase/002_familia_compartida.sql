@@ -26,7 +26,7 @@ begin
    where family_id = fid and not revocada and expires_at > now() and usos < max_usos
    order by created_at desc limit 1;
   if c is not null then return c; end if;
-  c := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 8));
+  c := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   insert into public.invitaciones (code, family_id, created_by, expires_at, max_usos)
     values (c, fid, auth.uid(), now() + interval '14 days', 10);
   return c;
