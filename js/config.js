@@ -7,7 +7,6 @@ export const SUPABASE_ANON_KEY = "sb_publishable_tZApcvtMLtMzE_Cm6yX4eQ_R8Gx7qr0
 export const PLAN = {
   precioMes: "S/ 9.90",
   precioAnio: "S/ 79",
-  // Cómo pagan. Se muestra tal cual. Ejemplo: "Yape o Plin al 999 999 999 (Moisés M.)"
-  instrucciones: "Yape o Plin al 999 999 999 a nombre de Moisés. Luego escríbenos por WhatsApp con tu correo.",
-  whatsapp: "51999999999", // número para el botón "Avisar que pagué", con código de país y sin +
+  instrucciones: "Yape o Plin al 993 807 443 (Moisés M.). Luego avísanos por WhatsApp con tu correo y activamos tu plan.",
+  whatsapp: "51993807443", // número para el botón "Avisar que pagué", con código de país y sin +
 };
