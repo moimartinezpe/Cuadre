@@ -23,9 +23,21 @@ export const CATS_INGRESO = [
 ];
 export const CATS_PRESTAMO = [{ id: "prestamo", nombre: "Préstamo", keys: [] }];
 export const CATS_COBRO = [{ id: "cobro", nombre: "Devolución", keys: [] }];
-export const CAT = Object.fromEntries([...CATS_GASTO, ...CATS_INGRESO, ...CATS_PRESTAMO, ...CATS_COBRO].map(c => [c.id, c]));
-export const catsFor = tipo => ({ ingreso: CATS_INGRESO, prestamo: CATS_PRESTAMO, cobro: CATS_COBRO }[tipo] || CATS_GASTO);
-export const entra = tipo => tipo === "ingreso" || tipo === "cobro";
+export const CATS_AHORRO = [{ id: "ahorro", nombre: "Ahorro", keys: [] }];
+export const CATS_RETIRO = [{ id: "retiro", nombre: "Uso de ahorros", keys: [] }];
+export const CATS_PAGOTC = [{ id: "pagotarjeta", nombre: "Pago de tarjeta", keys: [] }];
+export const CATS_AJMAS = [{ id: "ajuste_mas", nombre: "Ajuste de saldo", keys: [] }];
+export const CATS_AJMENOS = [{ id: "ajuste_menos", nombre: "Ajuste de saldo", keys: [] }];
+export const CAT = Object.fromEntries([...CATS_GASTO, ...CATS_INGRESO, ...CATS_PRESTAMO, ...CATS_COBRO, ...CATS_AHORRO, ...CATS_RETIRO, ...CATS_PAGOTC, ...CATS_AJMAS, ...CATS_AJMENOS].map(c => [c.id, c]));
+export const TIPOS = ["gasto", "ingreso", "prestamo", "cobro", "ahorro", "retiro", "pagotarjeta", "ajuste_mas", "ajuste_menos"];
+export const catsFor = tipo => ({ ingreso: CATS_INGRESO, prestamo: CATS_PRESTAMO, cobro: CATS_COBRO, ahorro: CATS_AHORRO, retiro: CATS_RETIRO, pagotarjeta: CATS_PAGOTC, ajuste_mas: CATS_AJMAS, ajuste_menos: CATS_AJMENOS }[tipo] || CATS_GASTO);
+// Lo que suma a «Les queda»
+export const entra = tipo => tipo === "ingreso" || tipo === "cobro" || tipo === "retiro" || tipo === "ajuste_mas";
+// Movimientos que no son ni gasto ni ingreso (no cuentan en las estadísticas de consumo)
+export const especial = tipo => ["ahorro", "retiro", "pagotarjeta", "ajuste_mas", "ajuste_menos"].includes(tipo);
+export const esAhorro = tipo => tipo === "ahorro" || tipo === "retiro";
+// Compra con tarjeta de crédito: es gasto, pero el efectivo baja recién al pagar la tarjeta
+export const conTarjeta = d => d.tipo === "gasto" && d.medio === "tarjeta";
 export const isLoan = tipo => tipo === "prestamo" || tipo === "cobro";
 
 const INGRESO_KEYS = w("sueldo salario quincena ingreso cobre cobramos pagaron deposito depositaron venta vendi vendimos bono gratificacion cts utilidades aguinaldo freelance cachuelo reembolso devolucion devolvio devolvieron abonaron prestaron");
@@ -38,6 +50,11 @@ const NAME_CUT = new Set(w("para pa por porque que pq hasta y"));
 const LEAD_VERBS = new Set(w("gaste gastamos gasto compre compramos pague pagamos"));
 const TRAIL_WORDS = new Set(w("de del es en por para a al la el y fue son con"));
 const CUR_WORDS = new Set(["s/", "s/.", "$", "€", "soles", "sol", "pesos", "dolares", "dolar", "lucas", "euros", "bs", "mangos", "varos", "usd", "pen"]);
+const SAVE_VERBS = new Set(w("ahorre ahorramos ahorrar ahorro guarde guardamos guardar separe separamos"));
+const WITHDRAW_VERBS = new Set(w("saque sacamos sacar retire retiramos retirar retiro use usamos usar"));
+const SAVE_WORDS = new Set(w("ahorro ahorros alcancia chanchito"));
+const TC_WORDS = new Set(w("tarjeta tc visa amex mastercard credito"));
+const PAY_VERBS = new Set(w("pague pagamos pago pagar cancele cancelamos"));
 const LEAD_WORDS = new Set(["para", "pa", "de", "del", "a", "al", "por", "la", "el", "los", "las", "mi", "nuestra", "nuestro"]);
 export const FAMILIA_KEYS = w("familia familiar conjunto todos casa hogar nosotros juntos compartido");
 
@@ -144,10 +161,27 @@ export function parse(text, opts = {}) {
     persona = p.id; used[i] = true;
     for (let j = i - 1; j >= Math.max(0, i - 2) && !used[j] && LEAD_WORDS.has(words[j]); j--) used[j] = true;
   }
-  let tipo = tipoOverride || null, deudor = "", prestamoId = null;
+  let tipo = tipoOverride || null, deudor = "", prestamoId = null, medio = null;
+  // «pagué la tarjeta 3074» = pago de la tarjeta; «luz 304 tarjeta» = compra con tarjeta
+  const tcIdx = words.findIndex((x, i) => !used[i] && TC_WORDS.has(x));
+  if (tcIdx > -1) {
+    const payIdx = words.findIndex((x, i) => !used[i] && PAY_VERBS.has(x));
+    const marcaTc = () => words.forEach((x, i) => { if (!used[i] && (TC_WORDS.has(x) || ["con", "la", "de", "mi", "en", "por"].includes(x))) used[i] = true; });
+    // solo «pagué (la/de/mi) tarjeta»; «pagué la luz con tarjeta» es una compra con tarjeta
+    const pegado = payIdx > -1 && tcIdx > payIdx && tcIdx - payIdx <= 3 && words.slice(payIdx + 1, tcIdx).every(x => ["la", "de", "mi", "el", "del"].includes(x));
+    if (!tipo && pegado && sign !== "+") { tipo = "pagotarjeta"; used[payIdx] = true; marcaTc(); }
+    else if (!tipo || tipo === "gasto") { medio = "tarjeta"; marcaTc(); }
+  }
   const verbIdx = words.findIndex((x, i) => !used[i] && LOAN_VERBS.has(x));
   if (!tipo) {
-    if (verbIdx > -1 && sign !== "+") tipo = "prestamo";
+    // «ahorré 200», «guardé 100 en el chanchito» / «saqué 350 de ahorros»
+    const hasSave = words.some((x, i) => !used[i] && SAVE_WORDS.has(x));
+    const wIdx = words.findIndex((x, i) => !used[i] && WITHDRAW_VERBS.has(x) && x !== "ahorro");
+    const sIdx = words.findIndex((x, i) => !used[i] && SAVE_VERBS.has(x) && !(x === "ahorro" && i > 0));
+    const marcar = () => words.forEach((x, i) => { if (!used[i] && (SAVE_VERBS.has(x) || WITHDRAW_VERBS.has(x) || SAVE_WORDS.has(x) || ["de", "del", "en", "el", "la", "los", "mis", "mi", "nuestros", "al", "a"].includes(x))) used[i] = true; });
+    if (wIdx > -1 && hasSave) { tipo = "retiro"; marcar(); }
+    else if (sIdx > -1 && sign !== "+" && verbIdx === -1) { tipo = "ahorro"; marcar(); }
+    else if (verbIdx > -1 && sign !== "+") tipo = "prestamo";
     else if (sign === "+") tipo = "ingreso";
     else if (sign) tipo = "gasto";
     else if (loans.length && words.some((x, i) => !used[i] && REPAY_WORDS.has(x))) {
@@ -188,7 +222,8 @@ export function parse(text, opts = {}) {
   while (e > s && TRAIL_WORDS.has(rw[e - 1])) e--;
   let nota = rest.slice(s, e).join(" ").replace(/^[\s,.;:\-–—]+|[\s,.;:\-–—]+$/g, "");
   if (nota) nota = nota.charAt(0).toUpperCase() + nota.slice(1);
-  return { monto, tipo, persona, categoria, catFound, nota, deudor, prestamoId, fecha };
+  if (tipo !== "gasto") medio = null;
+  return { monto, tipo, persona, categoria, catFound, nota, deudor, prestamoId, fecha, medio };
 }
 
 // ---------- Chat exportado de WhatsApp ----------
@@ -235,6 +270,7 @@ export function parseChat(text, opts) {
     const base = [fecha, stamp, autor, msg.trim()].join("|");
     const n = (seen.get(base) || 0) + 1; seen.set(base, n);
     const row = { import_key: "wa-" + hash(base + "#" + n), tipo: p.tipo, monto: p.monto, persona_id, categoria: p.categoria, nota: isLoan(p.tipo) ? p.nota : (p.nota || CAT[p.categoria].nombre), fecha: p.fecha || fecha, deudor: isLoan(p.tipo) ? p.deudor : "", prestamo_key: p.tipo === "cobro" ? p.prestamoId : null };
+    if (p.medio) row.medio = p.medio;
     if (p.tipo === "prestamo" && p.deudor) loanCtx.push({ id: row.import_key, deudor: p.deudor, persona_id, fecha: row.fecha });
     rows.push(row);
   }

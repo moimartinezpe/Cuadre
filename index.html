@@ -321,6 +321,96 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
 .multi .mrow.bad .a{color:var(--neg)}
 .multi .mhead{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .chips.multi-mode #chip-tipo,.chips.multi-mode #chip-cat{display:none}
+/* ---------- resumen del mes ---------- */
+.pulse-btn{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:var(--surface);border:1px solid var(--line);text-align:left}
+.pulse-btn:hover{background:var(--surface-2)}
+.ring{position:relative;width:58px;height:58px;flex:none;display:grid;place-items:center}
+.ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.ring .track{stroke:var(--surface-2)}
+.ring .val{transition:stroke-dashoffset .6s ease}
+.ring b{font-family:var(--font-display);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ring.lg{width:96px;height:96px}.ring.lg b{font-size:32px}
+.s-good{stroke:var(--in);color:var(--in)}.s-mid{stroke:var(--gold);color:var(--gold)}.s-bad{stroke:var(--neg);color:var(--neg)}
+.pulse-txt{min-width:0;display:grid;gap:1px}
+.pulse-eyebrow{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.pulse-txt strong{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-.01em}
+.pulse-sub{font-size:12.5px;color:var(--muted);font-weight:600}
+.chev{color:var(--muted);font-size:22px;line-height:1}
+.res-top{display:flex;align-items:center;gap:18px}
+.res-top p{margin:0}
+.res-verdict{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em}
+.comp{display:grid;gap:12px}
+.comp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:baseline}
+.comp-row .nm{font-weight:700;font-size:14px}
+.comp-row .v{font-weight:800;font-variant-numeric:tabular-nums}
+.comp-row .bar2{grid-column:1/-1;height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.comp-row .bar2 i{display:block;height:100%;border-radius:4px}
+.comp-row .bar2 i.s-good{background:var(--in)}.comp-row .bar2 i.s-mid{background:var(--gold)}.comp-row .bar2 i.s-bad{background:var(--neg)}
+.comp-row small{grid-column:1/-1;color:var(--muted);font-size:12.5px;font-weight:600}
+.obs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.obs li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.4}
+/* ---------- pestañas + estadísticas ---------- */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface-2);max-width:420px}
+.tabs button{height:40px;border-radius:10px;font-weight:800;font-size:14px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(10,16,12,.12)}
+@media (min-width:880px){.tabs,.stats-view{grid-column:1/-1}}
+.stats-view{display:grid;gap:18px;min-width:0}
+.range{display:grid;gap:10px}
+.presets{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.presets::-webkit-scrollbar{display:none}
+.presets .chip{flex:none}
+.range-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:420px}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px;align-items:start}
+.st-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px;min-width:0}
+.st-card h3{font-family:var(--font-display);font-size:16px;font-weight:700;margin:0;letter-spacing:-.005em}
+.st-hero{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.st-hero .meta,.st-hero small{color:var(--on-ink-muted)}
+.st-hero .ring .track{stroke:color-mix(in srgb,var(--on-ink) 18%,transparent)}
+.st-hero .comp-row .bar2{background:color-mix(in srgb,var(--on-ink) 16%,transparent)}
+.st-hero .comp-row small{color:var(--on-ink-muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:0}
+.kpis div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.kpis dt{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpis dd{margin:4px 0 0;font-family:var(--font-display);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;overflow-wrap:anywhere}
+.kpis dd.pos{color:var(--in)}.kpis dd.neg2{color:var(--neg)}
+.kpis small{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font:600 11px var(--font-body)}
+.chart .b{fill:color-mix(in srgb,var(--ink) 28%,transparent)}
+.chart .b.max{fill:var(--ink)}
+.chart .avg{stroke:var(--gold);stroke-width:1.5;stroke-dasharray:4 4}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.delta{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--neg)}.delta.down{color:var(--in)}
+.toplist{list-style:none;margin:0;padding:0;display:grid}
+.toplist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.toplist li:first-child{border-top:0}
+.toplist b{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toplist small{color:var(--muted);font-weight:600;font-size:12px}
+.toplist .a{font-weight:800;font-variant-numeric:tabular-nums}
+.st-empty{background:var(--surface);border:1px dashed var(--line);border-radius:16px;padding:20px;color:var(--muted)}
+body.stats-on .composer{display:none!important}
+body.stats-on .app{padding-bottom:40px}
+/* ---------- tarjeta, ahorros, fijos, presupuestos ---------- */
+.block-total.sav{color:var(--in)}
+.block-total.fij{color:var(--ink)}.block-total.fij.ok{color:var(--in)}
+#tc-total{color:var(--loan)}
+.pill.tc{background:color-mix(in srgb,var(--loan) 14%,transparent);color:var(--loan)}
+.chip.save{background:color-mix(in srgb,var(--gold) 16%,var(--surface));border-color:var(--gold);color:var(--ink)}
+.mov-amt.save{color:var(--gold)}
+.fx-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) 64px minmax(0,1fr) auto;gap:8px}
+.fx-row input,.fx-row select{height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 10px;font-size:15px;min-width:0}
+.fx-row .btn{height:44px}
+@media (max-width:560px){.fx-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 64px}.fx-row select{grid-column:1/3}.fx-row .btn{grid-column:3}}
+.pre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.pre-grid label{display:grid;gap:4px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.pre-grid input{height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);padding:0 10px;font-size:15px;min-width:0}
+.fx-st{font-size:12px;font-weight:800}
+.fx-st.ok{color:var(--in)}.fx-st.late{color:var(--neg)}.fx-st.soon{color:var(--gold)}
+.fij-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 10px}
+.pre-row .bar{position:relative;overflow:visible}
+.pre-row .bar i.ok{background:var(--in)}.pre-row .bar i.mid{background:var(--gold)}.pre-row .bar i.bad{background:var(--neg)}
+.pre-row .bar b{position:absolute;top:-3px;width:2px;height:12px;background:var(--ink);border-radius:1px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -407,6 +497,31 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <div class="solo-act"><button type="button" class="btn primary" id="inst-go">Agregar</button><button type="button" class="icon-btn plain" id="inst-close" aria-label="Ocultar"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   </div>
 
+  <nav class="tabs" role="tablist" aria-label="Vistas">
+    <button type="button" role="tab" id="tab-cuentas" aria-selected="true">Cuentas</button>
+    <button type="button" role="tab" id="tab-stats" aria-selected="false">Estadísticas</button>
+  </nav>
+
+  <section class="stats-view" id="stats-view" hidden>
+    <div class="range">
+      <div class="presets" id="st-presets" role="group" aria-label="Rango rápido">
+        <button type="button" class="chip" data-r="cobro" hidden>Desde mi cobro</button>
+        <button type="button" class="chip" data-r="cobro-ant" hidden>Período anterior</button>
+        <button type="button" class="chip" data-r="mes">Este mes</button>
+        <button type="button" class="chip" data-r="pasado">Mes pasado</button>
+        <button type="button" class="chip" data-r="30">Últimos 30 días</button>
+        <button type="button" class="chip" data-r="90">3 meses</button>
+        <button type="button" class="chip" data-r="anio">Este año</button>
+      </div>
+      <div class="range-row">
+        <label class="field"><span>Desde</span><input type="date" id="st-desde"></label>
+        <label class="field"><span>Hasta</span><input type="date" id="st-hasta"></label>
+      </div>
+      <div class="cur-row"><button type="button" class="btn ghost" id="st-dl" disabled>Descargar este rango (Excel)</button><span class="meta" id="st-dl-note"></span></div>
+    </div>
+    <div id="st-body" aria-live="polite"></div>
+  </section>
+
   <div class="side">
     <nav class="month" aria-label="Mes">
       <button type="button" class="icon-btn" id="prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
@@ -426,6 +541,35 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
       </dl>
       <p class="loanline" id="loanline" hidden></p>
       <p class="perday" id="perday" hidden></p>
+    </section>
+
+    <section id="pulse" hidden>
+      <button type="button" class="pulse-btn" id="pulse-open">
+        <span class="ring" id="pulse-ring"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="track" cx="22" cy="22" r="18" fill="none" stroke-width="5"></circle><circle class="val" cx="22" cy="22" r="18" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1"></circle></svg><b>–</b></span>
+        <span class="pulse-txt"><span class="pulse-eyebrow" id="pulse-eyebrow">Resumen del mes</span><strong id="pulse-title">–</strong><span class="pulse-sub" id="pulse-sub"></span></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+    </section>
+
+    <section class="block" id="tc-block" hidden>
+      <div class="block-head"><h3>Tarjeta de crédito</h3><span class="block-total" id="tc-total"></span></div>
+      <p class="meta" id="tc-note"></p>
+      <div class="cur-row"><button type="button" class="btn ghost small" id="tc-pay">Pagué la tarjeta</button></div>
+    </section>
+
+    <section class="block" id="fij-block" hidden>
+      <div class="block-head"><h3>Pagos fijos</h3><span class="block-total fij" id="fij-total"></span></div>
+      <ul class="rows" id="fijos"></ul>
+    </section>
+
+    <section class="block" id="pre-block" hidden>
+      <div class="block-head"><h3>Presupuestos</h3><span class="meta" id="pre-note"></span></div>
+      <ul class="rows" id="pres"></ul>
+    </section>
+
+    <section class="block" id="sav-block" hidden>
+      <div class="block-head"><h3>Ahorros</h3><span class="block-total sav" id="sav-total"></span></div>
+      <p class="meta" id="sav-note"></p>
     </section>
 
     <section class="block" id="loans-block" hidden>
@@ -452,7 +596,7 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <div class="sugs" id="sugs" hidden></div>
     <div class="multi" id="multi" hidden></div>
     <div class="chips">
-      <button type="button" class="chip" id="chip-tipo" aria-label="Cambiar entre gasto, ingreso y préstamo">Gasto</button>
+      <button type="button" class="chip" id="chip-tipo" aria-expanded="false" aria-label="Tipo de movimiento"><span id="chip-tipo-name">Gasto</span><span class="caret" aria-hidden="true">▾</span></button>
       <button type="button" class="chip" id="chip-persona" aria-expanded="false"><i class="dot" id="chip-persona-dot"></i><span id="chip-persona-name">Familia</span><span class="caret" aria-hidden="true">▾</span></button>
       <button type="button" class="chip" id="chip-cat" aria-expanded="false"><span id="chip-cat-name">Otros</span><span class="caret" aria-hidden="true">▾</span></button>
       <label class="chip date" id="chip-date"><span id="date-label">Hoy</span><input type="date" id="in-date" aria-label="Fecha del movimiento"></label>
@@ -480,10 +624,26 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <label class="field"><span id="ed-nota-label">Descripción</span><input id="ed-nota" maxlength="140" autocomplete="off"></label>
     <div class="field"><span id="ed-persona-label">Para quién</span><div class="seg wrap" id="ed-persona" role="group" aria-label="Persona"></div></div>
     <label class="field" id="ed-cat-wrap"><span>Categoría</span><select id="ed-cat"></select></label>
+    <label class="check" id="ed-tc-wrap" hidden><input type="checkbox" id="ed-tc"> Lo pagué con tarjeta de crédito</label>
     <label class="check" id="ed-cerrado-wrap" hidden><input type="checkbox" id="ed-cerrado"> Ya no se va a cobrar (quitarlo de “Les deben”)</label>
     <p class="meta" id="ed-meta"></p>
     <p class="err-line" id="ed-err" hidden></p>
     <div class="sheet-actions"><button type="button" class="btn danger" id="ed-del">Eliminar</button><button type="button" class="btn primary" id="ed-save">Guardar cambios</button></div>
+  </div>
+</div>
+
+<!-- Pagar la tarjeta -->
+<div class="sheet-wrap" id="tcp-wrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tcp-title">
+    <div class="sheet-head"><h2 id="tcp-title" tabindex="-1">Pagué la tarjeta</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="meta" id="tcp-meta"></p>
+    <div class="two">
+      <label class="field"><span>Pagué</span><input id="tcp-monto" inputmode="decimal" autocomplete="off"></label>
+      <label class="field"><span>Fecha</span><input id="tcp-fecha" type="date"></label>
+    </div>
+    <p class="meta">Baja el efectivo y la deuda de la tarjeta. No se vuelve a contar como gasto, porque cada compra ya se anotó. Si el estado de cuenta trae intereses o comisiones, anótenlos aparte: «intereses 76 tarjeta».</p>
+    <p class="err-line" id="tcp-err" hidden></p>
+    <div class="sheet-actions"><span></span><button type="button" class="btn primary" id="tcp-save">Guardar pago</button></div>
   </div>
 </div>
 
@@ -522,6 +682,29 @@ h1{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font
     <div class="field"><span>Moneda</span><div class="cur-row"><input id="set-moneda" maxlength="5" aria-label="Símbolo de moneda" autocomplete="off"><button type="button" class="chip" data-m="S/">S/</button><button type="button" class="chip" data-m="$">$</button><button type="button" class="chip" data-m="€">€</button><button type="button" class="chip" data-m="Bs">Bs</button><button type="button" class="chip" data-m="Q">Q</button><button type="button" class="chip" data-m="₡">₡</button></div></div>
     <label class="field"><span>Día en que cobran</span><input id="set-cobro" type="number" inputmode="numeric" min="1" max="31" placeholder="Fin de mes"><small>Se usa para calcular cuánto pueden gastar por día hasta el próximo cobro.</small></label>
     <div class="field"><span>Cómo escriben los montos</span><div class="seg" id="set-formato" role="group" aria-label="Formato de números"><button type="button" data-v="punto">1,250.50</button><button type="button" data-v="coma">1.250,50</button></div></div>
+
+    <h3>Control</h3>
+    <p class="meta" id="ctl-missing" hidden>Ahorros, tarjeta de crédito, pagos fijos y presupuestos se activan cuando el administrador actualice la base de datos.</p>
+    <div id="ctl-settings" hidden style="display:grid;gap:16px">
+      <label class="field"><span>Efectivo y cuentas hoy</span><input id="set-efectivo" inputmode="decimal" autocomplete="off" placeholder="Ej: 1850"><small id="set-efectivo-note">Lo que tienen de verdad en billetera y cuentas (sin ahorros). Cuadre anota la diferencia como ajuste para que «Les queda» coincida.</small></label>
+      <div class="field">
+        <span>Tarjeta de crédito</span>
+        <div class="two"><label class="field"><span>Día de pago</span><input id="set-tc-dia" type="number" inputmode="numeric" min="1" max="31" placeholder="20"></label><label class="field"><span>Deuda hoy</span><input id="set-tc-deuda" inputmode="decimal" autocomplete="off" placeholder="0"></label></div>
+        <small>Anoten cada compra con tarjeta el día que la hacen: «luz 304 tarjeta». Cuando paguen, toquen «Pagué la tarjeta».</small>
+      </div>
+      <label class="field"><span>Saldo que tienen hoy en ahorros</span><input id="set-ahorro" inputmode="decimal" autocomplete="off" placeholder="Ej: 2500"><small>Desde aquí, «ahorré 200» lo suma y «saqué 350 de ahorros» lo resta. No cuentan como gasto ni como ingreso.</small></label>
+      <div class="field">
+        <span>Pagos fijos del mes</span>
+        <ul class="plist" id="set-fijos"></ul>
+        <div class="fx-row"><input id="fx-nombre" maxlength="30" placeholder="Ej: Luz" aria-label="Nombre del pago fijo" autocomplete="off"><input id="fx-monto" inputmode="decimal" placeholder="Monto" aria-label="Monto aproximado" autocomplete="off"><input id="fx-dia" type="number" inputmode="numeric" min="1" max="31" placeholder="Día" aria-label="Día en que se paga"><select id="fx-cat" aria-label="Categoría"></select><button type="button" class="btn primary" id="fx-add">Agregar</button></div>
+        <small id="fx-note">Se marcan como pagados solos cuando anotan algo con ese nombre en el mes.</small>
+      </div>
+      <div class="field">
+        <span>Presupuesto por mes</span>
+        <div class="pre-grid" id="set-pres"></div>
+        <small>Dejen en blanco las categorías sin tope. El semáforo avisa si van más rápido que el mes.</small>
+      </div>
+    </div>
 
     <h3>Datos</h3>
     <div class="cur-row"><button type="button" class="btn ghost" id="btn-import">Importar chat de WhatsApp</button></div>
